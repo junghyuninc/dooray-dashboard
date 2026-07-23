@@ -1,0 +1,2977 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>두레이 업무 관리 (라이트)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#1a1a18;font-size:14px}
+:root{
+  --bg:#ffffff;--bg2:#f5f5f0;--bg3:#efefea;
+  --text:#1a1a18;--text2:#6b6b63;--text3:#9c9a92;
+  --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.2);
+  --radius:8px;--radius-lg:12px;
+}
+@media(prefers-color-scheme:dark){
+  :root{--bg:#1c1c1a;--bg2:#141412;--bg3:#242422;--text:#e8e6de;--text2:#9c9a92;--text3:#6b6b63;--border:rgba(255,255,255,0.12);--border2:rgba(255,255,255,0.2)}
+}
+
+/* ── 레이아웃 ── */
+.app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.topbar{background:var(--bg);border-bottom:0.5px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.logo{width:26px;height:26px;background:var(--text);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.topbar-title{font-size:15px;font-weight:500;flex:1;color:var(--text)}
+.badge{display:flex;align-items:center;gap:5px;font-size:11px;padding:3px 9px;border-radius:99px;border:0.5px solid}
+.badge.green{background:#EAF3DE;color:#27500A;border-color:#C0DD97}
+.badge.gray{background:var(--bg3);color:var(--text2);border-color:var(--border)}
+.badge.red{background:#FCEBEB;color:#791F1F;border-color:#F7C1C1}
+.bdot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.icon-btn{font-size:11px;padding:4px 10px;border-radius:99px;border:0.5px solid var(--border);background:none;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:4px}
+.icon-btn:hover{background:var(--bg3)}
+
+.proj-tabs{background:var(--bg);border-bottom:0.5px solid var(--border);padding:0 16px;display:flex;overflow-x:auto;flex-shrink:0}
+.proj-tab{padding:8px 14px;font-size:12px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;white-space:nowrap;flex-shrink:0;display:flex;align-items:center;gap:5px}
+.proj-tab.active{color:var(--text);border-bottom-color:var(--text);font-weight:500}
+.proj-tab-cnt{font-size:10px;padding:1px 5px;border-radius:99px;background:var(--bg3);color:var(--text2)}
+.proj-tab.active .proj-tab-cnt{background:var(--text);color:var(--bg)}
+
+.nav-tabs{background:var(--bg);border-bottom:0.5px solid var(--border);padding:0 16px;display:flex;flex-shrink:0;overflow-x:auto}
+.nav-tab{padding:7px 12px;font-size:12px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;white-space:nowrap}
+.nav-tab.active{color:var(--text);border-bottom-color:var(--text);font-weight:500}
+
+.toolbar{padding:8px 14px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex-shrink:0}
+.f-btn{font-size:11px;padding:3px 9px;border-radius:99px;border:0.5px solid var(--border2);background:var(--bg);color:var(--text2);cursor:pointer}
+.f-btn.active{background:var(--text);color:var(--bg);border-color:var(--text)}
+.f-btn:hover:not(.active){background:var(--bg3)}
+.flex1{flex:1}
+.task-cnt{font-size:11px;color:var(--text3)}
+
+.content{flex:1;overflow:auto;padding:0 12px 16px}
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;flex-direction:column;gap:14px;color:var(--text2)}
+.spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--text);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{padding:32px;text-align:center;color:var(--text3);font-size:13px}
+
+/* ── 칸반 ── */
+.kanban{display:flex;gap:8px;padding:12px 0;align-items:flex-start;min-width:max-content}
+.kboard{width:216px;flex-shrink:0;border-radius:var(--radius-lg);background:var(--bg3);border:0.5px solid var(--border)}
+.kboard-head{padding:9px 12px;display:flex;align-items:center;gap:6px;border-bottom:0.5px solid var(--border)}
+.kboard-title{font-size:11px;font-weight:500;flex:1;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kcount{font-size:10px;padding:1px 6px;border-radius:99px;background:var(--bg);border:0.5px solid var(--border);color:var(--text2);flex-shrink:0}
+.kboard-body{padding:7px;display:flex;flex-direction:column;gap:5px;min-height:40px}
+.task-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:10px;cursor:pointer;transition:transform .12s,border-color .12s}
+.task-card:hover{border-color:var(--border2);transform:translateY(-1px)}
+.task-card.urgent{border-left:3px solid #E24B4A}
+.card-title{font-size:11px;font-weight:500;color:var(--text);line-height:1.4;margin-bottom:6px}
+.urg-label{font-size:9px;padding:1px 5px;border-radius:3px;background:#FCEBEB;color:#A32D2D;font-weight:500;display:inline-block;margin-bottom:4px}
+.chip-sect{margin-top:6px;padding-top:6px;border-top:0.5px solid var(--border)}
+.chip-sect-lbl{font-size:9px;color:var(--text3);margin-bottom:2px}
+.chips{display:flex;flex-wrap:wrap;gap:3px}
+.chip{font-size:9px;padding:2px 6px;border-radius:99px;white-space:nowrap}
+.chip.d{background:#E6F1FB;color:#185FA5}
+.chip.p{background:#EAF3DE;color:#3B6D11}
+.card-date{font-size:9px;color:var(--text3);margin-top:5px}
+
+/* ── 우선순위 ── */
+.pri-wrap{padding:12px 0}
+.pri-sect{margin-bottom:16px}
+.pri-hd{display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:6px 10px;border-radius:6px}
+.pri-hd.u{background:#FCEBEB;border:0.5px solid #F7C1C1}
+.pri-hd.n{background:var(--bg3);border:0.5px solid var(--border)}
+.pri-lbl{font-size:13px;font-weight:500}
+.pri-lbl.u{color:#A32D2D}
+.pri-hd.n .pri-lbl{color:var(--text2)}
+.pri-cnt{font-size:11px;padding:1px 6px;border-radius:99px}
+.pri-hd.u .pri-cnt{background:#F7C1C1;color:#791F1F}
+.pri-hd.n .pri-cnt{background:var(--bg);color:var(--text2);border:0.5px solid var(--border)}
+.task-row{display:grid;grid-template-columns:1fr auto 110px 70px;align-items:start;padding:8px 12px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);margin-bottom:4px;gap:8px;cursor:pointer}
+.task-row:hover{background:var(--bg3)}
+.row-title{font-size:12px;font-weight:500;color:var(--text);line-height:1.4}
+.row-status{font-size:10px;padding:2px 7px;border-radius:99px;text-align:center;white-space:nowrap}
+.row-date{font-size:11px;color:var(--text3);text-align:right;white-space:nowrap}
+
+/* ── 타임라인 ── */
+.tl-wrap{padding:0}
+.tl-sub-tabs{display:flex;gap:0;border-bottom:0.5px solid var(--border);background:var(--bg);margin-bottom:0;flex-shrink:0}
+.tl-sub-tab{padding:6px 14px;font-size:11px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;white-space:nowrap}
+.tl-sub-tab.active{color:var(--text);border-bottom-color:var(--text);font-weight:500}
+.tl-container{overflow-x:auto;overflow-y:auto;padding-bottom:12px}
+.tl-table{border-collapse:collapse;min-width:100%}
+/* 헤더 */
+.tl-name-col{width:200px;min-width:200px;position:sticky;left:0;background:var(--bg);z-index:10;border-right:0.5px solid var(--border2)}
+.tl-date-header{background:var(--bg3);border-bottom:0.5px solid var(--border);position:sticky;top:0;z-index:9}
+.tl-date-header .tl-name-col{background:var(--bg3);z-index:11;border-bottom:0.5px solid var(--border)}
+.tl-dh-cell{width:36px;min-width:36px;max-width:36px;font-size:9px;color:var(--text3);text-align:center;padding:5px 0;border-right:0.5px solid var(--border);border-bottom:0.5px solid var(--border);position:sticky;top:0;background:var(--bg3);z-index:8}
+.tl-dh-cell.today-col{background:#FCEBEB;color:#A32D2D;font-weight:600}
+.tl-dh-cell.weekend{color:var(--text3);background:var(--bg2)}
+.tl-name-cell{padding:0 8px;font-size:11px;color:var(--text);font-weight:500;background:var(--bg);border-right:0.5px solid var(--border2);vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+/* 섹션 헤더 (작업자별) */
+.tl-group-row td{background:var(--bg3);font-size:11px;font-weight:500;color:var(--text2);padding:5px 10px;border-bottom:0.5px solid var(--border);position:sticky;left:0}
+/* 업무 행 */
+.tl-task-row{height:34px;border-bottom:0.5px solid var(--border)}
+.tl-task-row:hover .tl-name-cell{background:var(--bg3)}
+.tl-grid-cell{width:36px;min-width:36px;max-width:36px;border-right:0.5px solid var(--border);position:relative;padding:0;vertical-align:middle}
+.tl-grid-cell.today-col{background:rgba(226,75,74,0.04)}
+.tl-grid-cell.weekend{background:var(--bg2)}
+/* 막대 */
+.tl-bar-wrap{position:relative;height:34px}
+.tl-bar-seg{position:absolute;height:20px;top:7px;border-radius:4px;cursor:pointer;display:flex;align-items:center;padding:0 6px;font-size:9px;white-space:nowrap;overflow:hidden;transition:filter .1s}
+.tl-bar-seg:hover{filter:brightness(.88);z-index:5}
+/* md 뱃지 */
+.md-badge{font-size:9px;padding:1px 5px;border-radius:3px;margin-left:4px;font-weight:500}
+/* 작업자 아바타 */
+.tl-avatar{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;flex-shrink:0}
+.tl-av-d{background:#E6F1FB;color:#185FA5}
+.tl-av-p{background:#EAF3DE;color:#3B6D11}
+
+/* ── 캘린더 ── */
+.cal-wrap{padding:12px 0}
+.cal-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.cal-month{font-size:14px;font-weight:500;color:var(--text)}
+.cal-nav{background:none;border:0.5px solid var(--border);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:13px;color:var(--text2)}
+.cal-nav:hover{background:var(--bg3)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.cal-dh{background:var(--bg3);padding:5px;font-size:10px;color:var(--text2);text-align:center}
+.cal-day{background:var(--bg);min-height:76px;padding:4px}
+.cal-day.om .cal-dn{color:var(--text3)}
+.cal-day.today .cal-dn{background:var(--text);color:var(--bg);border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center}
+.cal-dn{font-size:10px;color:var(--text2);width:18px;height:18px;display:flex;align-items:center;justify-content:center;margin-bottom:2px}
+.cal-ev{font-size:9px;padding:2px 4px;border-radius:3px;margin-bottom:2px;cursor:pointer}
+.cal-ev-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.cal-ev-chips{display:flex;flex-wrap:wrap;gap:1px;margin-top:1px}
+.cal-ev-chip{font-size:7px;padding:0 3px;border-radius:99px}
+
+/* ── 설정 ── */
+.cfg-wrap{padding:20px;max-width:480px}
+.cfg-wrap h3{font-size:14px;font-weight:500;margin-bottom:12px;color:var(--text)}
+.cfg-label{font-size:12px;color:var(--text2);display:block;margin-bottom:4px}
+.cfg-input{width:100%;padding:8px 10px;border-radius:6px;border:0.5px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;margin-bottom:10px;outline:none}
+.cfg-input:focus{border-color:var(--text)}
+.pw-wrap{display:flex;align-items:center;border:0.5px solid var(--border2);border-radius:6px;background:var(--bg3);margin-bottom:10px;overflow:hidden}
+.pw-wrap input{flex:1;padding:8px 10px;background:transparent;border:none;color:var(--text);font-size:13px;outline:none}
+.pw-wrap button{background:none;border:none;cursor:pointer;padding:0 10px;color:var(--text3);font-size:13px}
+.cfg-btn{padding:9px 18px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer}
+.cfg-btn.primary{background:var(--text);color:var(--bg);border:none}
+.cfg-btn.secondary{background:none;border:0.5px solid var(--border2);color:var(--text2);margin-right:8px}
+.cfg-status{padding:9px 12px;border-radius:6px;font-size:12px;margin-top:10px;display:none;line-height:1.6}
+.cfg-status.ok{background:#EAF3DE;color:#27500A;border:0.5px solid #C0DD97;display:block}
+.cfg-status.err{background:#FCEBEB;color:#791F1F;border:0.5px solid #F7C1C1;display:block}
+.cfg-status.ing{background:var(--bg3);color:var(--text2);border:0.5px solid var(--border);display:block}
+.proj-cfg-item{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:6px;border:0.5px solid var(--border);background:var(--bg);margin-bottom:4px;font-size:12px;color:var(--text)}
+.proj-cfg-item .del-btn{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:2px 6px;border-radius:4px}
+.proj-cfg-item .del-btn:hover{color:#A32D2D;background:#FCEBEB}
+
+/* ── 상세 패널 ── */
+.detail{position:fixed;right:0;top:0;height:100%;width:320px;background:var(--bg);border-left:0.5px solid var(--border);transform:translateX(100%);transition:transform .2s;z-index:100;overflow-y:auto;padding:14px;box-shadow:-4px 0 20px rgba(0,0,0,.08)}
+.detail.open{transform:translateX(0)}
+.detail-close{background:none;border:0.5px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;color:var(--text2);margin-bottom:12px}
+.dsect{margin-bottom:12px}
+.dsect-lbl{font-size:10px;color:var(--text3);margin-bottom:5px}
+.st-btn{width:100%;text-align:left;padding:6px 10px;border-radius:6px;border:0.5px solid var(--border);background:transparent;color:var(--text2);font-size:11px;cursor:pointer;display:flex;align-items:center;gap:7px;margin-bottom:3px}
+.st-btn:hover{background:var(--bg3)}
+.sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+/* ── 드래그 앤 드롭 ── */
+.task-card { cursor: grab; user-select: none; }
+.task-card:active { cursor: grabbing; }
+.task-card.dragging {
+  opacity: 0.4;
+  transform: rotate(2deg) scale(0.97);
+  border: 1.5px dashed var(--border2) !important;
+}
+.kboard-body.drag-over {
+  background: var(--bg);
+  outline: 2px dashed #534AB7;
+  outline-offset: -3px;
+  border-radius: var(--radius);
+}
+.kboard.drag-over-board .kboard-head {
+  background: #EEEDFE;
+}
+.drop-placeholder {
+  height: 52px;
+  border-radius: var(--radius);
+  background: #EEEDFE;
+  border: 1.5px dashed #534AB7;
+  opacity: 0.7;
+  margin-bottom: 5px;
+  flex-shrink: 0;
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="logo">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <rect x="1" y="1" width="5" height="5" rx="1" fill="white" opacity=".9"/>
+        <rect x="8" y="1" width="5" height="5" rx="1" fill="white" opacity=".9"/>
+        <rect x="1" y="8" width="5" height="5" rx="1" fill="white" opacity=".9"/>
+        <rect x="8" y="8" width="5" height="5" rx="1" fill="white" opacity=".5"/>
+      </svg>
+    </div>
+    <div class="topbar-title">두레이 업무 관리</div>
+    <div class="badge gray" id="conn-badge"><div class="bdot"></div><span id="conn-txt">연결 안됨</span></div>
+    <button class="icon-btn" onclick="syncAll(true)" id="sync-btn">
+      <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M10 6A4 4 0 112 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M10 3.5V6H7.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      새로고침
+    </button>
+    <button class="icon-btn" onclick="sv('settings',null)">⚙️ 설정</button>
+  </div>
+
+  <div class="proj-tabs" id="proj-tabs">
+    <div style="padding:12px 16px;font-size:12px;color:var(--text3)">설정에서 API 토큰과 프로젝트를 등록하세요</div>
+  </div>
+
+  <div class="nav-tabs" id="nav-tabs">
+    <div class="nav-tab active" onclick="sv('kanban',this)">칸반</div>
+    <div class="nav-tab" onclick="sv('timeline',this)">타임라인</div>
+    <div class="nav-tab" onclick="sv('calendar',this)">캘린더</div>
+    <div class="nav-tab" onclick="sv('priority',this)">우선순위</div>
+    <div class="nav-tab" onclick="sv('settings',this)">⚙️ 설정</div>
+  </div>
+
+  <!-- WORKS 전용 탭 -->
+  <div class="nav-tabs" id="works-tabs" style="display:none">
+    <div class="nav-tab active" id="wt-report" onclick="setWorksTab('report',this)">제작 보고</div>
+    <div class="nav-tab" onclick="sv('settings',this)">⚙️ 설정</div>
+  </div>
+
+  <!-- 공고제작 전용 탭 -->
+  <div class="nav-tabs" id="gongo-tabs" style="display:none">
+    <div class="nav-tab active" id="gt-daily-lite" onclick="setGongoTab('daily-lite',this)">일간 보고</div>
+    <div class="nav-tab" id="gt-weekly-lite" onclick="setGongoTab('weekly-lite',this)">주간 보고</div>
+    <div class="nav-tab" onclick="sv('settings',this)">⚙️ 설정</div>
+  </div>
+
+  <div class="toolbar" id="toolbar">
+    <button class="f-btn active" onclick="setFilter('all',this)">전체</button>
+    <button class="f-btn" onclick="setFilter('active',this)">진행중만</button>
+    <button class="f-btn" onclick="setFilter('designer',this)">디자이너</button>
+    <button class="f-btn" onclick="setFilter('publisher',this)">퍼블리셔</button>
+    <button class="f-btn" id="urg-btn" onclick="toggleUrgent(this)">🔴 긴급만</button>
+    <div class="flex1"></div>
+    <span id="kw-badge" style="font-size:10px;padding:2px 8px;border-radius:99px;background:var(--bg3);color:var(--text3);display:none"></span>
+    <span class="task-cnt" id="task-cnt"></span>
+  </div>
+
+  <div class="content" id="main">
+    <div class="loading">
+      <div style="font-size:13px;color:var(--text2)">⚙️ 설정 탭에서 API 토큰과 프록시 URL을 입력해 시작하세요</div>
+    </div>
+  </div>
+</div>
+
+<!-- 상세 패널 -->
+<div class="detail" id="detail">
+  <button class="detail-close" onclick="closeDetail()">✕ 닫기</button>
+  <div id="detail-body"></div>
+</div>
+
+<script>
+// ── 설정 저장소 (localStorage) ──────────────────────────────
+const LS = {
+  get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set: (k,v) => localStorage.setItem(k, JSON.stringify(v)),
+};
+
+let cfg = LS.get('dooray-cfg') || {
+  token: '',
+  proxy: 'https://dooray-proxy.witch0326.workers.dev',
+  projects: [
+    {id:'1517095452497754850', name:'디자인팀', keywords:''},
+    {id:'3578990295646932668', name:'공고제작', keywords:''},
+    {id:'2483123369246283287', name:'WORKS-고객의소리', keywords:'합불페이지,메인이미지'},
+  ]
+};
+
+// ── 상수 ────────────────────────────────────────────────────
+const PUBLISHERS = ['김성엽','유승비','이상봉'];
+
+const WF_MAP = {
+  '대기중':              {c:'#888780', bg:'#F1EFE8'},
+  '디자인진행중':        {c:'#534AB7', bg:'#EEEDFE'},
+  '시안검수중':          {c:'#185FA5', bg:'#E6F1FB'},
+  '마크업대기중':        {c:'#BA7517', bg:'#FAEEDA'},
+  '마크업진행중':        {c:'#0F6E56', bg:'#E1F5EE'},
+  '마크업검수&오픈대기': {c:'#3B6D11', bg:'#EAF3DE'},
+  '완료':                {c:'#3B6D11', bg:'#EAF3DE'},
+  '홀딩':                {c:'#A32D2D', bg:'#FCEBEB'},
+};
+const STATUS_ORDER = ['대기중','디자인진행중','시안검수중','마크업대기중','마크업진행중','마크업검수&오픈대기','완료','홀딩'];
+
+// ── 상태 ────────────────────────────────────────────────────
+let allTasks = {};
+let curProject = cfg.projects[0]?.id || '';
+let curView = 'kanban';
+let filterMode = 'all';
+let urgentOnly = false;
+let calMonth = new Date();
+let pwShow = false;
+
+// 드래그 상태
+let dragTask = null;
+let dragSource = null;
+// 타임라인 서브탭
+let tlMode = 'task'; // 'task' | 'person'
+// 타임라인 날짜 범위
+let tlDays = 30;
+// 공고요청 서브탭
+let gongoMode = 'list'; // 'list' | 'person' | 'stats'
+// 공고요청 날짜 필터
+let gongoRange = 'day'; // 'day' | 'week'
+let gongoTab = 'daily-lite'; // 라이트 버전 기본값
+let gongoWeekOffset = 0; // 0=이번주, -1=지난주
+let excludeDup = false; // 중복 제외 모드
+let worksWeekOffset = 0; // WORKS 주간 오프셋
+// WORKS 날짜 검색
+let worksViewMode = 'week'; // 'week' | 'date'
+let worksDateFrom = '';
+let worksDateTo   = '';
+const GONGO_PROJECT_ID  = '3578990295646932668';
+const DESIGN_PROJECT_ID = '1517095452497754850';
+const WORKS_PROJECT_ID  = '2483123369246283287';
+const WORKS_STATS_FROM  = '2026-04-15';
+const GONGO_STATS_FROM  = '2026-04-20'; // 통계 시작일
+
+// ── 공고제작 태그 ID 매핑 ──────────────────────────────────
+const TAG = {
+  // 공고 유형
+  수정:         '4006629227380703720',
+  외부HTML:     '4006629331953547547',
+  외부이미지:   '4249406950734860043',
+  신규기존:     '4311016371817097904',
+  신규실사:     '4006629091098207511',
+  신규일러스트: '4311009855425502394',
+  신규통이미지: '4311012926306352909',
+  // 상품명
+  프레스티지:   '4006629467230442835',
+  슈페리어:     '4006629658552970756',
+  슈프림:       '4006629740756602907',
+  유니크:       '4006629818696849156',
+  와이즈:       '4006630043950765243',
+  업직종:       '4006630132505566384',
+  WORKS:        '4006630239790537783',
+  RASP25:       '4006630337155134932',
+};
+
+// 일반공고 상품명 태그 세트
+const TAG_일반공고 = new Set([TAG.프레스티지,TAG.슈페리어,TAG.슈프림,TAG.유니크,TAG.와이즈,TAG.업직종]);
+// 외부 태그 세트
+const TAG_외부 = new Set([TAG.외부HTML, TAG.외부이미지]);
+
+// ── 유틸 ────────────────────────────────────────────────────
+function wf(name) { return WF_MAP[name] || {c:'#888780', bg:'#F1EFE8'}; }
+function roleOf(n) { return PUBLISHERS.includes(n) ? 'publisher' : 'designer'; }
+
+function parseTask(p, projectId) {
+  const toUsers = p.users?.to || [];
+  const assignees = [];
+  toUsers.forEach(u => {
+    // type==='member'인 경우만 담당자로 집계
+    // group 타입은 CC성 그룹(공고제작 전체팀 등)이므로 제외
+    if (u.type==='member' && u.member?.name) {
+      if (!assignees.find(a=>a.name===u.member.name))
+        assignees.push({name:u.member.name, role:roleOf(u.member.name)});
+    }
+  });
+  // 마감일: dueDate 우선, 없으면 endedAt (closed가 false일 때만)
+  let due = null;
+  if (p.dueDate) due = p.dueDate.slice(0,10);
+  else if (p.endedAt && !p.closed) due = p.endedAt.slice(0,10);
+
+  // 시작일: startedAt 우선, 없으면 createdAt (시간 포함 저장)
+  let startDate = null;
+  let startDateTime = null;
+  if (p.startedAt) { startDate = p.startedAt.slice(0,10); startDateTime = p.startedAt; }
+  else if (p.createdAt) { startDate = p.createdAt.slice(0,10); startDateTime = p.createdAt; }
+
+  // 완료일 시간 포함
+  let dueDateTime = null;
+  if (p.dueDate) dueDateTime = p.dueDate;
+  else if (p.endedAt && !p.closed) dueDateTime = p.endedAt;
+  else if (p.endedAt) dueDateTime = p.endedAt;
+
+  // ── 공고제작 전용 파싱 ──
+  const subj = p.subject || '';
+  const tagIds = new Set((p.tags||[]).map(t=>t.id));
+
+  // 템플릿 유형 (기존 호환)
+  let tmpl = '일반';
+  if (subj.startsWith('[수정]')) tmpl = '수정';
+  else if (subj.startsWith('[외부_이미지]')) tmpl = '외부_이미지';
+  else if (subj.startsWith('[외부]')) tmpl = '외부';
+  else if (subj.startsWith('!')) tmpl = '긴급';
+
+  // 분류 항목 (태그 기반, 본문 체크는 _bodyCache 로드 후 별도 처리)
+  const classify = {
+    // 신규 공고 태그별
+    신규_기존:     tagIds.has(TAG.신규기존),
+    신규_실사:     tagIds.has(TAG.신규실사),
+    신규_일러스트: tagIds.has(TAG.신규일러스트),
+    신규_통이미지: tagIds.has(TAG.신규통이미지),
+    // 기존 분류
+    수정:      tagIds.has(TAG.수정),
+    외부:      tagIds.has(TAG.외부HTML) || tagIds.has(TAG.외부이미지),
+    WORKS공고: tagIds.has(TAG.WORKS),
+    RASP25:    tagIds.has(TAG.RASP25),
+    일반공고:  !subj.match(/^\[/) && !subj.startsWith('!') &&
+               [...tagIds].some(id => TAG_일반공고.has(id)),
+    // 본문 체크 항목은 _classify로 별도 저장
+  };
+
+  // 공고N_배너N_로고N 파싱
+  const itemMatch = subj.match(/공고(\d+)_배너(\d+)_로고(\d+)/);
+
+  // 디자이너 담당 여부 확인 (퍼블리셔만 있으면 집계 제외)
+  const toUsers2 = p.users?.to || [];
+  const hasDesigner = toUsers2.some(u => {
+    const name = u.member?.name || '';
+    return !['김성엽','유승비','이상봉'].includes(name) && name !== '';
+  });
+
+  const itemCounts = itemMatch ? {
+    공고: parseInt(itemMatch[1]),
+    // 배너/로고는 디자이너 담당일 때만 집계
+    배너: hasDesigner ? parseInt(itemMatch[2]) : 0,
+    로고: hasDesigner ? parseInt(itemMatch[3]) : 0,
+    total: parseInt(itemMatch[1]) + (hasDesigner ? parseInt(itemMatch[2]) + parseInt(itemMatch[3]) : 0)
+  } : null;
+
+  const orgId = p.project?.id ? '' : '';
+  const doorayUrl = `https://incruit.dooray.com/project/posts/${p.id}`;
+
+  return {
+    id: p.id,
+    title: p.subject,
+    doorayUrl,
+    status: p.workflow?.name || '대기중',
+    priority: p.priority==='highest' ? 'urgent' : 'normal',
+    assignees,
+    due,
+    startDate,
+    startDateTime,
+    dueDateTime,
+    closed: p.closed === true,
+    projectId,
+    taskNumber: p.taskNumber,
+    createdAt: p.createdAt,
+    workflowClass: p.workflowClass,
+    tmpl,
+    tagIds: [...tagIds],
+    classify,
+    itemCounts,
+    closedAt: p.endedAt ? p.endedAt.slice(0,10) : null,
+    fileCount: (p.fileIdList || []).length,
+    updatedAt: p.updatedAt ? p.updatedAt.slice(0,10) : null,
+  };
+}
+
+// ── API 호출 ────────────────────────────────────────────────
+async function fetchProject(pid) {
+  try {
+    // 공고제작은 데이터가 많아 통계 기준일(GONGO_STATS_FROM) 이후 전체 조회
+    if (pid === GONGO_PROJECT_ID) {
+      await fetchGongoAll(pid);
+      return;
+    }
+    const r = await fetch(
+      `${cfg.proxy}/proxy/project/v1/projects/${pid}/posts?page=0&size=100&order=-createdAt`,
+      { headers:{'Authorization':`dooray-api ${cfg.token}`}, signal:AbortSignal.timeout(12000) }
+    );
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    const data = await r.json();
+    allTasks[pid] = (data.result||[]).map(p => parseTask(p, pid));
+  } catch(e) {
+    allTasks[pid] = [];
+    console.warn('fetch error', pid, e.message);
+  }
+}
+
+// 공고제작 전체 조회 (페이지네이션)
+async function fetchGongoAll(pid) {
+  const PAGE_SIZE = 100;
+  let page = 0;
+  let all = [];
+  // GONGO_STATS_FROM 이후 데이터만 필요 → 최대 20페이지(2000건) 제한
+  const MAX_PAGES = 20;
+
+  setBadge('ing', '공고제작 데이터 조회 중...');
+
+  while (page < MAX_PAGES) {
+    try {
+      const r = await fetch(
+        `${cfg.proxy}/proxy/project/v1/projects/${pid}/posts?page=${page}&size=${PAGE_SIZE}&order=-createdAt`,
+        { headers:{'Authorization':`dooray-api ${cfg.token}`}, signal:AbortSignal.timeout(15000) }
+      );
+      if (!r.ok) break;
+      const data = await r.json();
+      const results = data.result || [];
+      if (!results.length) break;
+
+      // GONGO_STATS_FROM 이전 데이터가 나오면 중단
+      const filtered = results.filter(p => {
+        const d = (p.endedAt || p.createdAt || '').slice(0,10);
+        return d >= GONGO_STATS_FROM;
+      });
+      all = all.concat(filtered.map(p => parseTask(p, pid)));
+
+      // 페이지 내 모든 항목이 기준일 이전이면 중단
+      if (filtered.length < results.length) break;
+      if (results.length < PAGE_SIZE) break;
+
+      page++;
+      setBadge('ing', `공고제작 조회 중... ${all.length}건`);
+    } catch(e) {
+      console.warn('fetchGongoAll error', e.message);
+      break;
+    }
+  }
+
+  allTasks[pid] = all;
+  console.log(`공고제작 총 ${all.length}건 로드 (${page+1}페이지)`);
+}
+
+// 본문 일괄 조회 공통 함수
+async function fetchBodies(projectId, tasks) {
+  if (!tasks.length || !cfg.token || !cfg.proxy) return;
+  const BATCH = 5;
+  for (let i = 0; i < tasks.length; i += BATCH) {
+    const batch = tasks.slice(i, i + BATCH);
+    await Promise.all(batch.map(async t => {
+      try {
+        const r = await fetch(
+          `${cfg.proxy}/proxy/project/v1/projects/${projectId}/posts/${t.id}`,
+          { headers:{'Authorization':`dooray-api ${cfg.token}`}, signal:AbortSignal.timeout(5000) }
+        );
+        if (r.ok) {
+          const data = await r.json();
+          t._bodyCache = data.result?.body?.content || '';
+          // 디자인팀: 담당자별 시간 파싱
+          if (projectId === DESIGN_PROJECT_ID) {
+            t._assigneeTimes = parseAssigneeTime(t._bodyCache, t.startDateTime || t.createdAt);
+          }
+          // 공고제작: 체크박스 파싱 → classify 업데이트
+          if (projectId === GONGO_PROJECT_ID) {
+            const checks = parseBodyChecks(t._bodyCache);
+            t._bodyChecks = checks;
+            const bodyClassify = classifyFromBody(checks, t.tagIds);
+            t.classify = { ...t.classify, ...bodyClassify };
+          }
+        }
+      } catch(e) {
+        t._bodyCache = '';
+      }
+    }));
+  }
+}
+
+// 디자인팀 업무 본문 일괄 조회 (타임라인 담당자별 시간용)
+async function fetchDesignBodies() {
+  const tasks = (allTasks[DESIGN_PROJECT_ID] || []).filter(t => !t.closed && !t._bodyCache);
+  if (!tasks.length) return;
+  setBadge('ing', `디자인팀 본문 조회 중 (${tasks.length}건)...`);
+  await fetchBodies(DESIGN_PROJECT_ID, tasks);
+  const total = Object.values(allTasks).reduce((s,a)=>s+a.length,0);
+  const now = new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+  setBadge('ok', `연결됨 · ${total}건 · ${now}`);
+  render();
+}
+
+// 공고제작 본문 일괄 조회 (체크박스 분류용)
+async function fetchGongoBodies() {
+  const tasks = (allTasks[GONGO_PROJECT_ID] || []).filter(t => !t._bodyCache);
+  if (!tasks.length) return;
+  setBadge('ing', `공고제작 본문 조회 중 (${tasks.length}건)...`);
+  await fetchBodies(GONGO_PROJECT_ID, tasks);
+  const total = Object.values(allTasks).reduce((s,a)=>s+a.length,0);
+  const now = new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+  setBadge('ok', `연결됨 · ${total}건 · ${now}`);
+  render();
+}
+
+async function syncAll(silent) {
+  if (!cfg.token) { sv('settings',null); return; }
+  setBadge('ing','동기화중...');
+  if (!silent) {
+    document.getElementById('main').innerHTML = '<div class="loading"><div class="spinner"></div><span>두레이에서 업무 불러오는 중...</span></div>';
+  }
+  await Promise.all(cfg.projects.map(p => fetchProject(p.id)));
+  const total = Object.values(allTasks).reduce((s,a)=>s+a.length,0);
+  const now = new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+  setBadge('ok', `연결됨 · ${total}건 · ${now}`);
+  renderProjTabs();
+  render();
+  // 백그라운드 본문 조회
+  fetchDesignBodies();   // 디자인팀: 담당자별 시간
+  fetchGongoBodies();    // 공고제작: 체크박스 분류
+}
+
+function setBadge(type, txt) {
+  const b = document.getElementById('conn-badge');
+  b.className = 'badge ' + (type==='ok'?'green':type==='err'?'red':'gray');
+  document.getElementById('conn-txt').textContent = txt;
+}
+
+// ── 프로젝트 탭 ──────────────────────────────────────────────
+function renderProjTabs() {
+  const el = document.getElementById('proj-tabs');
+  if (!cfg.projects.length) {
+    el.innerHTML = '<div style="padding:12px 16px;font-size:12px;color:var(--text3)">설정에서 프로젝트를 추가하세요</div>';
+    return;
+  }
+  el.innerHTML = cfg.projects.map(p => {
+    const active = (allTasks[p.id]||[]).filter(t=>!t.closed).length;
+    return `<div class="proj-tab ${p.id===curProject?'active':''}" onclick="selProj('${p.id}',this)">
+      ${p.name} <span class="proj-tab-cnt">${active}</span>
+    </div>`;
+  }).join('');
+  if (!curProject && cfg.projects.length) curProject = cfg.projects[0].id;
+}
+
+function selProj(id, el) {
+  curProject = id;
+  document.querySelectorAll('.proj-tab').forEach(e=>e.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+// ── 뷰 전환 ──────────────────────────────────────────────────
+function sv(v, el) {
+  curView = v;
+  document.querySelectorAll('.nav-tab').forEach(e=>e.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const isSettings = v==='settings';
+  document.getElementById('toolbar').style.display = isSettings ? 'none' : 'flex';
+  render();
+}
+
+function setFilter(m, btn) {
+  filterMode = m;
+  document.querySelectorAll('.f-btn').forEach(b=>{ if(b.id!=='urg-btn') b.classList.remove('active'); });
+  btn.classList.add('active');
+  render();
+}
+function toggleUrgent(btn) { urgentOnly=!urgentOnly; btn.classList.toggle('active',urgentOnly); render(); }
+
+// ── 필터된 태스크 ─────────────────────────────────────────────
+function curTasks() {
+  const tasks = allTasks[curProject] || [];
+  // 현재 프로젝트 키워드 필터
+  const proj = cfg.projects.find(p=>p.id===curProject);
+  const keywords = (proj?.keywords||'').split(',').map(k=>k.trim()).filter(Boolean);
+
+  return tasks.filter(t => {
+    // 키워드 필터: 하나라도 포함되면 통과
+    if (keywords.length > 0) {
+      const titleLower = t.title.toLowerCase();
+      const matched = keywords.some(k => titleLower.includes(k.toLowerCase()));
+      if (!matched) return false;
+    }
+    if (urgentOnly && t.priority!=='urgent') return false;
+    if (filterMode==='active' && t.closed) return false;
+    if (filterMode==='designer' && !t.assignees.some(a=>a.role==='designer')) return false;
+    if (filterMode==='publisher' && !t.assignees.some(a=>a.role==='publisher')) return false;
+    return true;
+  });
+}
+
+// ── 렌더 ──────────────────────────────────────────────────────
+function render() {
+  const c = document.getElementById('main');
+  if (curView==='settings') { renderSettings(c); return; }
+
+  // 공고제작 전용 뷰
+  if (curProject === GONGO_PROJECT_ID) {
+    document.getElementById('nav-tabs').style.display = 'none';
+    document.getElementById('gongo-tabs').style.display = 'flex';
+    document.getElementById('works-tabs').style.display = 'none';
+    document.getElementById('toolbar').style.display = 'none';
+    const t = curTasks();
+    renderGongoReport(c, t); return;
+  }
+  // WORKS 고객의소리 전용 뷰
+  if (curProject === WORKS_PROJECT_ID) {
+    document.getElementById('nav-tabs').style.display = 'none';
+    document.getElementById('gongo-tabs').style.display = 'none';
+    document.getElementById('works-tabs').style.display = 'flex';
+    document.getElementById('toolbar').style.display = 'none';
+    const t = allTasks[WORKS_PROJECT_ID] || [];
+    renderWorksReport(c, t); return;
+  }
+  // 일반 뷰
+  document.getElementById('nav-tabs').style.display = 'flex';
+  document.getElementById('gongo-tabs').style.display = 'none';
+  document.getElementById('works-tabs').style.display = 'none';
+  document.getElementById('toolbar').style.display = 'flex';
+
+  const t = curTasks();
+  document.getElementById('task-cnt').textContent = t.length+'건';
+  // 키워드 배지
+  const proj = cfg.projects.find(p=>p.id===curProject);
+  const kws = (proj?.keywords||'').split(',').map(k=>k.trim()).filter(Boolean);
+  const kwBadge = document.getElementById('kw-badge');
+  if (kws.length) {
+    kwBadge.style.display='inline';
+    kwBadge.textContent = '🔍 ' + kws.join(', ');
+  } else {
+    kwBadge.style.display='none';
+  }
+  if (curView==='kanban')    renderKanban(c, t);
+  else if (curView==='timeline') renderTimeline(c, t);
+  else if (curView==='calendar') renderCalendar(c, t);
+  else renderPriority(c, t);
+}
+
+function chipsHtml(assignees) {
+  const d = assignees.filter(a=>a.role==='designer');
+  const p = assignees.filter(a=>a.role==='publisher');
+  let h = '';
+  if (d.length) h += `<div class="chip-sect-lbl">디자이너</div><div class="chips">${d.map(a=>`<span class="chip d">${a.name}</span>`).join('')}</div>`;
+  if (p.length) h += `<div class="chip-sect-lbl" style="margin-top:${d.length?3:0}px">퍼블리셔</div><div class="chips">${p.map(a=>`<span class="chip p">${a.name}</span>`).join('')}</div>`;
+  return h ? `<div class="chip-sect">${h}</div>` : '';
+}
+
+// 칸반
+function renderKanban(c, tasks) {
+  const used = [...new Set(tasks.map(t=>t.status))];
+  const ordered = STATUS_ORDER.filter(s=>used.includes(s)).concat(used.filter(s=>!STATUS_ORDER.includes(s)));
+  if (!ordered.length) { c.innerHTML='<div class="empty">업무가 없습니다</div>'; return; }
+  c.innerHTML = '<div class="kanban">' + ordered.map(s => {
+    const info = wf(s);
+    const cards = tasks.filter(t=>t.status===s);
+    return `<div class="kboard">
+      <div class="kboard-head">
+        <div style="width:7px;height:7px;border-radius:50%;background:${info.c};flex-shrink:0"></div>
+        <div class="kboard-title">${s}</div>
+        <div class="kcount">${cards.length}</div>
+      </div>
+      <div class="kboard-body"
+        data-status="${s}"
+        ondragover="onDragOver(event)"
+        ondragleave="onDragLeave(event)"
+        ondrop="onDrop(event,'${s}')"
+      >${cards.map(t=>`
+        <div class="task-card ${t.priority}"
+          draggable="true"
+          data-id="${t.id}"
+          data-status="${s}"
+          onclick="showDetail('${t.id}')"
+          ondragstart="onDragStart(event,'${t.id}','${s}')"
+          ondragend="onDragEnd(event)"
+        >
+          ${t.priority==='urgent'?'<div class="urg-label">긴급</div>':''}
+          <div class="card-title">
+            <a href="${t.doorayUrl}" target="_blank" onclick="event.stopPropagation()" style="color:inherit;text-decoration:none;hover:text-decoration:underline" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${t.title}</a>
+          </div>
+          ${chipsHtml(t.assignees)}
+          ${t.due?`<div class="card-date">~${t.due.slice(5)}</div>`:''}
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+// 우선순위
+function renderPriority(c, tasks) {
+  const urgent = tasks.filter(t=>t.priority==='urgent');
+  const normal  = tasks.filter(t=>t.priority==='normal');
+  const rowHtml = t => {
+    const info = wf(t.status);
+    const d = t.assignees.filter(a=>a.role==='designer');
+    const p = t.assignees.filter(a=>a.role==='publisher');
+    return `<div class="task-row" onclick="showDetail('${t.id}')">
+      <div>
+        <div class="row-title">
+          <a href="${t.doorayUrl}" target="_blank" onclick="event.stopPropagation()" style="color:inherit;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${t.title}</a>
+        </div>
+        <div class="chips" style="margin-top:4px">
+          ${d.map(a=>`<span class="chip d">${a.name}</span>`).join('')}
+          ${p.map(a=>`<span class="chip p">${a.name}</span>`).join('')}
+        </div>
+      </div>
+      <div style="font-size:9px;color:var(--text3);white-space:nowrap">${d.length?d.length+'D':''} ${p.length?p.length+'P':''}</div>
+      <div><span class="row-status" style="background:${info.bg};color:${info.c}">${t.status}</span></div>
+      <div class="row-date">${t.due?t.due.slice(5):'-'}</div>
+    </div>`;
+  };
+  c.innerHTML = `<div class="pri-wrap">
+    <div style="display:grid;grid-template-columns:1fr auto 110px 70px;padding:4px 12px;gap:8px;margin-bottom:4px">
+      <div style="font-size:10px;color:var(--text3)">업무명 / 담당자</div>
+      <div style="font-size:10px;color:var(--text3)">인원</div>
+      <div style="font-size:10px;color:var(--text3);text-align:center">상태</div>
+      <div style="font-size:10px;color:var(--text3);text-align:right">마감</div>
+    </div>
+    <div class="pri-sect">
+      <div class="pri-hd u"><div class="pri-lbl u">🔴 긴급</div><div class="pri-cnt">${urgent.length}건</div></div>
+      ${urgent.length ? urgent.map(rowHtml).join('') : '<div class="empty" style="padding:8px 12px">긴급 업무 없음</div>'}
+    </div>
+    <div class="pri-sect">
+      <div class="pri-hd n"><div class="pri-lbl">보통</div><div class="pri-cnt">${normal.length}건</div></div>
+      ${normal.map(rowHtml).join('')}
+    </div>
+  </div>`;
+}
+
+// ── MD 계산 기준 ────────────────────────────────────────────
+// 업무 시간: 09:00~18:00 = 1md (9h)
+// 1h = 0.1md, 30min = 0.05md
+// 1md = 9h, 0.1md = 1h = 60min, 0.05md = 30min
+
+const WORK_START_H = 9;    // 09:00
+const WORK_END_H   = 18;   // 18:00
+const LUNCH_START_H = 12;  // 12:00 점심 시작
+const LUNCH_END_H   = 13;  // 13:00 점심 끝
+const WORK_HOURS   = 8;    // 1md = 8h (9h - 점심 1h)
+
+// 하루 중 업무 구간 목록 반환 (점심 제외)
+// 반환: [{start: Date, end: Date}, ...]
+function getDayWorkSegments(dayDate, globalStart, globalEnd) {
+  const segs = [];
+  // 오전: 09:00 ~ 12:00
+  const am_s = new Date(dayDate); am_s.setHours(WORK_START_H, 0, 0, 0);
+  const am_e = new Date(dayDate); am_e.setHours(LUNCH_START_H, 0, 0, 0);
+  // 오후: 13:00 ~ 18:00
+  const pm_s = new Date(dayDate); pm_s.setHours(LUNCH_END_H, 0, 0, 0);
+  const pm_e = new Date(dayDate); pm_e.setHours(WORK_END_H, 0, 0, 0);
+
+  [[am_s, am_e], [pm_s, pm_e]].forEach(([ws, we]) => {
+    const cs = Math.max(ws.getTime(), globalStart ? globalStart.getTime() : ws.getTime());
+    const ce = Math.min(we.getTime(), globalEnd   ? globalEnd.getTime()   : we.getTime());
+    if (ce > cs) segs.push([cs, ce]);
+  });
+  return segs;
+}
+
+// 두 시각 사이의 업무 시간(분) 계산 — 주말·점심 제외
+function calcWorkMinutes(startDT, endDT) {
+  if (!startDT || !endDT) return 0;
+  const s = new Date(startDT);
+  const e = new Date(endDT);
+  if (isNaN(s) || isNaN(e) || e <= s) return 0;
+
+  let totalMin = 0;
+  const cur = new Date(s); cur.setHours(0, 0, 0, 0);
+
+  while (cur <= e) {
+    const dow = cur.getDay();
+    if (dow !== 0 && dow !== 6) { // 주말 제외
+      getDayWorkSegments(cur, s, e).forEach(([cs, ce]) => {
+        totalMin += (ce - cs) / 60000;
+      });
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+  return totalMin;
+}
+
+// 분 → md 변환 (8h = 1md, 0.05 단위)
+function minutesToMd(min) {
+  return Math.round(min / (WORK_HOURS * 60) * 20) / 20;
+}
+
+function calcMdFromDatetime(startDT, endDT) {
+  const min = calcWorkMinutes(startDT, endDT);
+  if (min === 0) return null;
+  return minutesToMd(min);
+}
+
+// ── 중복 시간 제외 MD 계산 ───────────────────────────────────
+// 여러 업무 구간을 Union 병합 → 중복 시간 제거 후 실작업량 계산
+function calcMdWithOverlapExcluded(taskList) {
+  const intervals = taskList
+    .filter(t => t.startDateTime && t.dueDateTime)
+    .map(t => [new Date(t.startDateTime).getTime(), new Date(t.dueDateTime).getTime()])
+    .filter(([s,e]) => e > s)
+    .sort((a,b) => a[0]-b[0]);
+
+  if (!intervals.length) return null;
+
+  // 구간 병합 (Union) — 중복 구간 제거
+  const merged = [[...intervals[0]]];
+  for (let i = 1; i < intervals.length; i++) {
+    const last = merged[merged.length - 1];
+    if (intervals[i][0] <= last[1]) {
+      last[1] = Math.max(last[1], intervals[i][1]); // 겹치면 합침
+    } else {
+      merged.push([...intervals[i]]);
+    }
+  }
+
+  // 병합된 구간의 업무 시간(분) 합산
+  let totalMin = 0;
+  merged.forEach(([startMs, endMs]) => {
+    totalMin += calcWorkMinutes(new Date(startMs), new Date(endMs));
+  });
+
+  if (totalMin === 0) return null;
+  return minutesToMd(totalMin);
+}
+
+// 날짜만 있는 경우 (기존 방식 유지)
+function calcMd(startDate, endDate) {
+  if (!startDate || !endDate) return null;
+  const s = new Date(startDate), e = new Date(endDate);
+  let days = 0, cur = new Date(s);
+  while (cur <= e) {
+    const dow = cur.getDay();
+    if (dow !== 0 && dow !== 6) days++;
+    cur.setDate(cur.getDate()+1);
+  }
+  return Math.round(days * 0.8 * 10) / 10;
+}
+
+function mdLabel(md) {
+  if (md === null || md === undefined) return '';
+  if (md === 0) return '0md';
+  // 0.05 단위로 표시
+  const rounded = Math.round(md * 20) / 20; // 0.05 단위
+  if (rounded >= 1) {
+    // 1md 이상: 정수 md + 나머지 h 표시
+    const mdInt = Math.floor(rounded * 20) / 20;
+    return mdInt + 'md';
+  }
+  // 1md 미만: 시간(h) 또는 30분(0.5h) 단위
+  const hours = rounded * WORK_HOURS;
+  if (hours >= 1) return hours.toFixed(hours % 1 === 0 ? 0 : 1) + 'h';
+  return '30m';
+}
+
+// 타임라인
+function renderTimeline(c, tasks) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const rangeStart = new Date(today); rangeStart.setDate(today.getDate()-7);
+  const totalDays = tlDays;
+  const days = Array.from({length:totalDays}, (_,i)=>{ const d=new Date(rangeStart); d.setDate(d.getDate()+i); return d; });
+  const todayIdx = 7;
+  const CELL = 36; // px per day
+
+  const active = tasks.filter(t => (t.startDate || t.due) && t.projectId !== GONGO_PROJECT_ID);
+
+  // 서브탭
+  const subTabs = `<div class="tl-sub-tabs">
+    <div class="tl-sub-tab ${tlMode==='task'?'active':''}" onclick="setTlMode('task')">과제별</div>
+    <div class="tl-sub-tab ${tlMode==='person'?'active':''}" onclick="setTlMode('person')">작업자별</div>
+    <div style="flex:1"></div>
+    <div style="display:flex;align-items:center;gap:6px;padding:0 12px;font-size:10px;color:var(--text3)">
+      <span>1일 = 0.8md &nbsp;|&nbsp; 1h = 0.1md</span>
+      <select onchange="setTlDays(this.value)" style="font-size:10px;padding:2px 4px;border-radius:4px;border:0.5px solid var(--border);background:var(--bg3);color:var(--text);outline:none">
+        <option value="21" ${tlDays===21?'selected':''}>3주</option>
+        <option value="30" ${tlDays===30?'selected':''}>1개월</option>
+        <option value="60" ${tlDays===60?'selected':''}>2개월</option>
+        <option value="90" ${tlDays===90?'selected':''}>3개월</option>
+      </select>
+    </div>
+  </div>`;
+
+  // 날짜 헤더 행
+  const dateHeaderCells = days.map((d,i) => {
+    const isToday = i===todayIdx;
+    const isWknd  = d.getDay()===0||d.getDay()===6;
+    const cls = isToday?'today-col':isWknd?'weekend':'';
+    return `<th class="tl-dh-cell ${cls}">${(d.getMonth()+1)}/${d.getDate()}<br><span style="font-size:8px;opacity:.6">${['일','월','화','수','목','금','토'][d.getDay()]}</span></th>`;
+  }).join('');
+
+  let bodyRows = '';
+
+  if (tlMode === 'task') {
+    // ── 과제별 ──
+    active.forEach(t => {
+      const info = wf(t.status);
+      const sDate = t.startDate ? new Date(t.startDate) : (t.due ? new Date(t.due) : today);
+      const eDate = t.due       ? new Date(t.due)       : sDate;
+      const md    = t.startDateTime && t.dueDateTime
+        ? calcMdFromDatetime(t.startDateTime, t.dueDateTime)
+        : calcMd(t.startDate, t.due);
+      const mdTxt = mdLabel(md);
+      const sIdx  = Math.round((sDate-rangeStart)/86400000);
+      const eIdx  = Math.round((eDate-rangeStart)/86400000);
+      const d = t.assignees.filter(a=>a.role==='designer');
+      const p = t.assignees.filter(a=>a.role==='publisher');
+
+      // 이름 셀
+      // 담당자별 개인 MD 계산
+      const assigneeMdList = t.assignees.map(a => {
+        const pTimes = t._assigneeTimes?.[a.name];
+        let aMd = null;
+        if (pTimes && pTimes.length) {
+          aMd = pTimes.reduce((sum, pt) => sum + (calcMdFromDatetime(pt.startDT, pt.endDT)||0), 0);
+          aMd = Math.round(aMd * 20) / 20;
+        }
+        return { ...a, md: aMd };
+      });
+      const hasPersonTimes = assigneeMdList.some(a => a.md !== null);
+
+      const nameCellContent = `
+        <div style="font-size:10px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px" title="${t.title}">${t.priority==='urgent'?'🔴 ':''}${t.title}</div>
+        <div style="display:flex;gap:2px;flex-wrap:wrap;margin-top:2px">
+          ${assigneeMdList.map(a => {
+            const chipCls = a.role==='designer'?'d':'p';
+            const mdBadge = a.md !== null
+              ? `<span style="font-size:8px;padding:0 3px;border-radius:2px;background:var(--text);color:var(--bg);margin-left:2px">${mdLabel(a.md)}</span>`
+              : '';
+            return `<span class="chip ${chipCls}" style="font-size:8px;padding:1px 4px;display:inline-flex;align-items:center">${a.name}${mdBadge}</span>`;
+          }).join('')}
+        </div>
+        <div style="font-size:8px;color:var(--text3);margin-top:2px;display:flex;align-items:center;gap:4px">
+          <span>${t.startDateTime ? new Date(t.startDateTime).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : (t.startDate||'-')}→${t.dueDateTime ? new Date(t.dueDateTime).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : (t.due||'-')}</span>
+          ${mdTxt?`<strong style="color:var(--text)">${mdTxt}</strong>`:''}
+          ${hasPersonTimes ? '<span style="color:#534AB7;font-size:8px">● 개인시간</span>' : ''}
+        </div>`;
+
+      // 그리드 셀 (막대가 걸치는 범위)
+      let gridCells = '';
+      for (let i=0; i<totalDays; i++) {
+        const isToday = i===todayIdx;
+        const d2 = days[i]; const isWknd = d2.getDay()===0||d2.getDay()===6;
+        const cls = isToday?'today-col':isWknd?'weekend':'';
+        if (i===sIdx && sIdx<=eIdx && sIdx>=0 && sIdx<totalDays) {
+          const barSpan = Math.max(1, Math.min(eIdx-sIdx+1, totalDays-sIdx));
+          gridCells += `<td class="tl-grid-cell ${cls}" colspan="${barSpan}" style="width:${barSpan*CELL}px">
+            <div class="tl-bar-wrap">
+              <div class="tl-bar-seg" style="left:2px;right:2px;background:${info.bg};color:${info.c};border:0.5px solid ${info.c}66" onclick="showDetail('${t.id}')">
+                ${t.status}${mdTxt?`<span class="md-badge" style="background:${info.c}22;color:${info.c}">${mdTxt}</span>`:''}
+              </div>
+            </div>
+          </td>`;
+          i += barSpan - 1;
+        } else {
+          gridCells += `<td class="tl-grid-cell ${cls}"></td>`;
+        }
+      }
+      bodyRows += `<tr class="tl-task-row">
+        <td class="tl-name-cell">${nameCellContent}</td>
+        ${gridCells}
+      </tr>`;
+    });
+
+  } else {
+    // ── 작업자별 ──
+    // 모든 담당자 수집
+    const personMap = {};
+    active.forEach(t => {
+      t.assignees.forEach(a => {
+        if (!personMap[a.name]) personMap[a.name] = {role:a.role, tasks:[]};
+        personMap[a.name].tasks.push(t);
+      });
+    });
+    // 디자이너 먼저, 퍼블리셔 나중
+    const designers = Object.entries(personMap).filter(([,v])=>v.role==='designer');
+    const publishers = Object.entries(personMap).filter(([,v])=>v.role==='publisher');
+
+    const renderGroup = (label, persons) => {
+      if (!persons.length) return '';
+      let rows = `<tr class="tl-group-row"><td colspan="${totalDays+1}" style="background:var(--bg3)">${label}</td></tr>`;
+      persons.forEach(([name, {role, tasks: ptasks}]) => {
+        const avatarCls = role==='designer'?'tl-av-d':'tl-av-p';
+        // 담당자별 시간이 있으면 그 시간으로 중복 계산
+        const personTasksForOverlap = ptasks.map(t => {
+          const pTimes = t._assigneeTimes?.[name];
+          if (pTimes && pTimes.length) {
+            return { ...t, startDateTime: pTimes[0].startDT, dueDateTime: pTimes[pTimes.length-1].endDT };
+          }
+          return t;
+        });
+        const overlapMd = calcMdWithOverlapExcluded(personTasksForOverlap);
+        const overlapLabel = overlapMd !== null ? mdLabel(overlapMd) : '';
+
+        // 담당자별 시간 있는 업무 수
+        const personalTimeCount = ptasks.filter(t => t._assigneeTimes?.[name]?.length).length;
+
+        const nameCell = `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span class="tl-avatar ${avatarCls}">${name[0]}</span>
+          <span style="font-size:11px;font-weight:500">${name}</span>
+          <span style="font-size:9px;color:var(--text3)">${ptasks.length}건</span>
+          ${overlapLabel ? `<span style="font-size:9px;padding:1px 6px;border-radius:99px;background:var(--text);color:var(--bg);font-weight:500" title="중복 시간 제외 실작업량">⏱ ${overlapLabel}</span>` : ''}
+          ${personalTimeCount ? `<span style="font-size:9px;color:#534AB7">개인시간 ${personalTimeCount}건</span>` : ''}
+        </div>`;
+
+        // 멀티 레인: 겹치는 업무 처리
+        const lanes = [];
+        const taskLanes = ptasks.map(t => {
+          // 담당자별 시간이 있으면 우선 사용
+          const personTimes = t._assigneeTimes?.[name];
+          let sDate, eDate, personStartDT, personEndDT;
+          if (personTimes && personTimes.length) {
+            // 여러 구간이면 첫 시작~마지막 끝
+            personStartDT = personTimes[0].startDT;
+            personEndDT   = personTimes[personTimes.length-1].endDT;
+            sDate = new Date(personStartDT);
+            eDate = new Date(personEndDT);
+          } else {
+            sDate = t.startDate ? new Date(t.startDate) : (t.due ? new Date(t.due) : today);
+            eDate = t.due ? new Date(t.due) : sDate;
+            personStartDT = t.startDateTime;
+            personEndDT   = t.dueDateTime;
+          }
+          const sIdx = Math.round((sDate-rangeStart)/86400000);
+          const eIdx = Math.round((eDate-rangeStart)/86400000);
+          let lane = lanes.findIndex(end => end < sIdx);
+          if (lane === -1) { lane = lanes.length; lanes.push(eIdx); }
+          else lanes[lane] = eIdx;
+          return {t, sIdx, eIdx, lane, personStartDT, personEndDT};
+        });
+
+        const numLanes = Math.max(1, lanes.length);
+        const rowH = Math.max(34, numLanes * 28 + 8);
+
+        // 그리드 셀 (각 날짜별)
+        // 먼저 각 날짜 열에 bar를 그리기 위해 열 별로 처리
+        let gridCells = '';
+        for (let i=0; i<totalDays; i++) {
+          const d2 = days[i]; const isWknd = d2.getDay()===0||d2.getDay()===6;
+          const cls = (i===todayIdx)?'today-col':isWknd?'weekend':'';
+          // 이 셀에 걸치는 bars
+          const barsHere = taskLanes.filter(({sIdx,eIdx})=>i===sIdx && sIdx>=0 && sIdx<totalDays);
+          if (barsHere.length) {
+            // colspan = bar span
+            const maxSpan = Math.max(...barsHere.map(({sIdx,eIdx})=>Math.max(1,Math.min(eIdx-sIdx+1,totalDays-sIdx))));
+            const barsHtml = barsHere.map(({t,sIdx,eIdx,lane})=>{
+              const barSpan = Math.max(1,Math.min(eIdx-sIdx+1,totalDays-sIdx));
+              const info2 = wf(t.status);
+              const md = personStartDT && personEndDT
+                ? calcMdFromDatetime(personStartDT, personEndDT)
+                : (t.startDateTime && t.dueDateTime
+                  ? calcMdFromDatetime(t.startDateTime, t.dueDateTime)
+                  : calcMd(t.startDate, t.due));
+              const mdTxt = mdLabel(md);
+              const top = 4 + lane * 28;
+              // 담당자별 개인 시간 & MD
+              const pTimes2 = t._assigneeTimes?.[name];
+              const timeLabel2 = pTimes2 && pTimes2.length
+                ? pTimes2.map(pt => {
+                    const s=new Date(pt.startDT), e=new Date(pt.endDT);
+                    const fmt = d => `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+                    return `${fmt(s)}~${fmt(e)}`;
+                  }).join(' ')
+                : '';
+              const personalMd = pTimes2 && pTimes2.length
+                ? Math.round(pTimes2.reduce((s,pt)=>s+(calcMdFromDatetime(pt.startDT,pt.endDT)||0),0)*20)/20
+                : null;
+              const personalMdTxt = personalMd !== null ? mdLabel(personalMd) : '';
+
+              const titleShort = t.title.length>10 ? t.title.slice(0,10)+'…' : t.title;
+              const tooltip = `${t.title}${timeLabel2?' ('+timeLabel2+')':''}`;
+              return `<div class="tl-bar-seg" style="left:2px;width:${barSpan*CELL-4}px;top:${top}px;background:${info2.bg};color:${info2.c};border:0.5px solid ${info2.c}66" onclick="showDetail('${t.id}')" title="${tooltip}">
+                ${titleShort}
+                ${timeLabel2 ? `<span style="font-size:8px;opacity:.8;margin-left:3px">${timeLabel2}</span>` : ''}
+                ${personalMdTxt
+                  ? `<span class="md-badge" style="background:${info2.c};color:#fff">${personalMdTxt}</span>
+                     ${mdTxt ? `<span class="md-badge" style="background:${info2.c}22;color:${info2.c};text-decoration:line-through;opacity:.6">${mdTxt}</span>` : ''}`
+                  : (mdTxt ? `<span class="md-badge" style="background:${info2.c}22;color:${info2.c}">${mdTxt}</span>` : '')
+                }
+              </div>`;
+            }).join('');
+            gridCells += `<td class="tl-grid-cell ${cls}" style="position:relative;height:${rowH}px">${barsHtml}</td>`;
+            // colspan 처리를 위해 다음 셀 스킵하지 않음 (bar가 absolute라 겹침 처리)
+          } else {
+            gridCells += `<td class="tl-grid-cell ${cls}" style="height:${rowH}px"></td>`;
+          }
+        }
+
+        rows += `<tr class="tl-task-row" style="height:${rowH}px">
+          <td class="tl-name-cell" style="height:${rowH}px;vertical-align:top;padding-top:8px">${nameCell}</td>
+          ${gridCells}
+        </tr>`;
+      });
+      return rows;
+    };
+
+    bodyRows += renderGroup('🎨 디자이너', designers);
+    bodyRows += renderGroup('💻 퍼블리셔', publishers);
+  }
+
+  if (!active.length) {
+    bodyRows = `<tr><td colspan="${totalDays+1}" style="padding:32px;text-align:center;color:var(--text3);font-size:13px">타임라인에 표시할 업무가 없습니다</td></tr>`;
+  }
+
+  c.innerHTML = subTabs + `<div class="tl-container">
+    <table class="tl-table">
+      <thead>
+        <tr class="tl-date-header">
+          <th class="tl-name-col tl-dh-cell" style="text-align:left;padding-left:10px;font-size:10px;color:var(--text2)">
+            ${tlMode==='task'?'업무':'작업자'}
+          </th>
+          ${dateHeaderCells}
+        </tr>
+      </thead>
+      <tbody>${bodyRows}</tbody>
+    </table>
+  </div>`;
+
+  // 오늘 날짜로 스크롤
+  setTimeout(()=>{
+    const wrap = c.querySelector('.tl-container');
+    if (wrap) wrap.scrollLeft = Math.max(0, (todayIdx-3)*CELL);
+  }, 50);
+  html += '</div>';
+  c.innerHTML = html;
+}
+
+// 캘린더
+function renderCalendar(c, tasks) {
+  const year=calMonth.getFullYear(), month=calMonth.getMonth();
+  const today=new Date();
+  const firstDay=new Date(year,month,1).getDay();
+  const lastDate=new Date(year,month+1,0).getDate();
+  const DAYS=['일','월','화','수','목','금','토'];
+  let html = `<div class="cal-wrap">
+  <div class="cal-hdr">
+    <button class="cal-nav" onclick="calPrev()">‹</button>
+    <div class="cal-month">${year}년 ${month+1}월</div>
+    <button class="cal-nav" onclick="calNext()">›</button>
+  </div>
+  <div class="cal-grid">
+    ${DAYS.map(d=>`<div class="cal-dh">${d}</div>`).join('')}`;
+  const cells=[];
+  for(let i=0;i<firstDay;i++) cells.push({day:new Date(year,month,0).getDate()-firstDay+1+i,other:true});
+  for(let i=1;i<=lastDate;i++) cells.push({day:i,other:false});
+  while(cells.length%7) cells.push({day:cells.length-firstDay-lastDate+1,other:true});
+  cells.forEach(cell => {
+    const isToday = !cell.other && year===today.getFullYear() && month===today.getMonth() && cell.day===today.getDate();
+    const events = cell.other ? [] : tasks.filter(t=>{
+      if(!t.due)return false;
+      const d=new Date(t.due);
+      return d.getFullYear()===year && d.getMonth()===month && d.getDate()===cell.day;
+    });
+    html += `<div class="cal-day${cell.other?' om':''}${isToday?' today':''}">
+      <div class="cal-dn">${cell.day}</div>
+      ${events.map(t=>{
+        const d=t.assignees.filter(a=>a.role==='designer');
+        const p=t.assignees.filter(a=>a.role==='publisher');
+        const info=wf(t.status);
+        return `<div class="cal-ev" style="background:${t.priority==='urgent'?'#FCEBEB':info.bg}" onclick="showDetail('${t.id}')">
+          <div class="cal-ev-title" style="color:${t.priority==='urgent'?'#A32D2D':info.c}">${t.title}</div>
+          <div class="cal-ev-chips">
+            ${d.map(a=>`<span class="cal-ev-chip" style="background:#B5D4F4;color:#0C447C">${a.name}</span>`).join('')}
+            ${p.map(a=>`<span class="cal-ev-chip" style="background:#C0DD97;color:#27500A">${a.name}</span>`).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  });
+  html += '</div></div>';
+  c.innerHTML = html;
+}
+
+// 설정
+function renderSettings(c) {
+  c.innerHTML = `<div class="cfg-wrap">
+    <h3>API 연동 설정</h3>
+    <label class="cfg-label">API Token</label>
+    <div class="pw-wrap">
+      <input type="password" id="cfg-token" value="${cfg.token}" placeholder="dooray-api xxxxxxxx"/>
+      <button onclick="togglePw()">👁</button>
+    </div>
+    <label class="cfg-label">프록시 서버 URL</label>
+    <input class="cfg-input" id="cfg-proxy" value="${cfg.proxy}" placeholder="http://localhost:3001"/>
+    <div style="display:flex;gap:8px;margin-bottom:20px">
+      <button class="cfg-btn secondary" onclick="testConn()">🔌 연결 테스트</button>
+      <button class="cfg-btn primary" onclick="saveCfg()">저장 후 동기화</button>
+    </div>
+    <div class="cfg-status" id="cfg-status"></div>
+
+    <h3 style="margin-top:20px">프로젝트 관리</h3>
+    <div id="proj-list">${renderProjList()}</div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <input class="cfg-input" id="new-proj-id" placeholder="프로젝트 ID" style="flex:1;margin:0"/>
+      <input class="cfg-input" id="new-proj-name" placeholder="이름" style="width:100px;margin:0"/>
+      <button class="cfg-btn primary" onclick="addProj()">추가</button>
+    </div>
+
+    <h3 style="margin-top:20px">팀원 설정</h3>
+    <label class="cfg-label">퍼블리셔 (쉼표로 구분)</label>
+    <input class="cfg-input" id="cfg-pub" value="${(cfg.publishers||PUBLISHERS).join(',')}"/>
+    <button class="cfg-btn secondary" onclick="savePub()">저장</button>
+  </div>`;
+}
+
+function renderProjList() {
+  return cfg.projects.map((p,i)=>`
+    <div class="proj-cfg-item" style="flex-direction:column;align-items:flex-start;gap:6px">
+      <div style="display:flex;align-items:center;width:100%;gap:8px">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="1" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.2"/></svg>
+        <strong>${p.name}</strong>
+        <span style="font-size:10px;color:var(--text3)">${p.id.slice(-6)}</span>
+        <span style="font-size:10px;color:var(--text3);margin-left:auto;margin-right:4px">${(allTasks[p.id]||[]).length}건</span>
+        <button class="del-btn" onclick="removeProj(${i})">✕</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;width:100%;padding-left:20px">
+        <span style="font-size:10px;color:var(--text3);flex-shrink:0">키워드 필터</span>
+        <input style="flex:1;padding:3px 7px;border-radius:4px;border:0.5px solid var(--border);background:var(--bg3);color:var(--text);font-size:11px;outline:none"
+          placeholder="예: 합불페이지,메인이미지 (쉼표 구분, 비우면 전체)"
+          value="${p.keywords||''}"
+          oninput="updateKeywords(${i}, this.value)"
+        />
+      </div>
+    </div>`).join('');
+}
+
+function updateKeywords(i, val) {
+  cfg.projects[i].keywords = val;
+  LS.set('dooray-cfg', cfg);
+  render(); // 실시간 반영
+}
+
+function addProj() {
+  const id = document.getElementById('new-proj-id').value.trim();
+  const name = document.getElementById('new-proj-name').value.trim();
+  if (!id || !name) return alert('ID와 이름을 입력해주세요');
+  cfg.projects.push({id, name});
+  LS.set('dooray-cfg', cfg);
+  renderSettings(document.getElementById('main'));
+}
+
+function removeProj(i) {
+  cfg.projects.splice(i,1);
+  LS.set('dooray-cfg', cfg);
+  renderProjTabs();
+  renderSettings(document.getElementById('main'));
+}
+
+function savePub() {
+  const val = document.getElementById('cfg-pub').value;
+  cfg.publishers = val.split(',').map(s=>s.trim()).filter(Boolean);
+  LS.set('dooray-cfg', cfg);
+  alert('저장됐습니다');
+}
+
+function togglePw() {
+  pwShow=!pwShow;
+  const inp = document.getElementById('cfg-token');
+  if (inp) inp.type = pwShow?'text':'password';
+}
+
+async function testConn() {
+  const token = document.getElementById('cfg-token').value.trim();
+  const proxy = document.getElementById('cfg-proxy').value.trim();
+  const st = document.getElementById('cfg-status');
+  st.className='cfg-status ing'; st.textContent='프록시 서버 연결 확인 중...';
+  try {
+    const h = await fetch(`${proxy}/health`, {signal:AbortSignal.timeout(4000)});
+    if (!h.ok) throw new Error('프록시 응답 오류');
+    st.textContent='프록시 OK — 두레이 인증 확인 중...';
+    const r = await fetch(`${proxy}/proxy/project/v1/projects?page=0&size=1`,
+      {headers:{'Authorization':`dooray-api ${token}`}, signal:AbortSignal.timeout(6000)});
+    if (r.status===401||r.status===403) throw new Error('인증 실패 — 토큰을 확인해주세요');
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    st.className='cfg-status ok'; st.textContent='✅ 연결 성공! 저장 후 동기화를 눌러주세요.';
+  } catch(e) {
+    st.className='cfg-status err';
+    st.textContent = e.message.includes('fetch')||e.name==='TypeError'
+      ? '✗ 프록시 서버에 연결할 수 없습니다. node server.js가 실행 중인지 확인하세요.'
+      : '✗ ' + e.message;
+  }
+}
+
+async function saveCfg() {
+  cfg.token = document.getElementById('cfg-token').value.trim();
+  cfg.proxy  = document.getElementById('cfg-proxy').value.trim();
+  LS.set('dooray-cfg', cfg);
+  await syncAll();
+  if (cfg.projects.length) sv('kanban', null);
+}
+
+// ── 본문 체크박스 파싱 (공고제작) ──────────────────────────
+// * [x] 항목명 → true, * [ ] 항목명 → false
+function parseBodyChecks(htmlOrMd) {
+  if (!htmlOrMd) return {};
+  // HTML 태그 제거
+  const text = htmlOrMd.replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ');
+  const result = {};
+  // * [x] 또는 * [ ] 패턴
+  const re = /\*\s*\[( |x|X)\]\s*([^\n*]+)/g;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    const checked = m[1].toLowerCase() === 'x';
+    const label   = m[2].trim().toLowerCase();
+    result[label] = checked;
+  }
+  return result;
+}
+
+// 체크박스에서 분류 항목 추출
+function classifyFromBody(checks, tagIds) {
+  const hasTag = id => (tagIds||[]).includes(id);
+  return {
+    배너:        checks['배너'] === true,
+    로고:        checks['로고'] === true,
+    롤링이미지:  checks['롤링이미지'] === true,
+    인트로페이지:checks['인트로 페이지'] === true || checks['인트로페이지'] === true,
+    버튼:        hasTag(TAG.RASP25) && (checks['rasp 메인 페이지 사용 버튼'] === true || checks['버튼 필요'] === true),
+  };
+}
+
+// ── 본문에서 담당자별 시간 파싱 ────────────────────────────
+// 형식: @이름: HH:MM~HH:MM 또는 @이름: MM/DD HH:MM~HH:MM
+function parseAssigneeTime(htmlContent, baseDate) {
+  if (!htmlContent) return {};
+  // HTML 태그 제거
+  const text = htmlContent.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g,' ');
+  const result = {};
+  // 패턴: @이름: (MM/DD )HH:MM~HH:MM
+  const re = /@([^\s:：]+)\s*[:：]\s*(?:(\d{1,2})\/(\d{1,2})\s+)?(\d{1,2}):(\d{2})\s*[~\-~–]\s*(\d{1,2}):(\d{2})/g;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    const name   = m[1].trim();
+    const month  = m[2] ? parseInt(m[2])-1 : null;
+    const day    = m[3] ? parseInt(m[3])    : null;
+    const sH = parseInt(m[4]), sM = parseInt(m[5]);
+    const eH = parseInt(m[6]), eM = parseInt(m[7]);
+
+    // 기준 날짜 결정
+    let base = baseDate ? new Date(baseDate) : new Date();
+    if (month !== null && day !== null) {
+      base = new Date(base.getFullYear(), month, day);
+    }
+
+    const startDT = new Date(base.getFullYear(), base.getMonth(), base.getDate(), sH, sM, 0);
+    const endDT   = new Date(base.getFullYear(), base.getMonth(), base.getDate(), eH, eM, 0);
+
+    if (!result[name]) result[name] = [];
+    result[name].push({ startDT: startDT.toISOString(), endDT: endDT.toISOString() });
+  }
+  return result;
+}
+
+// 상세 패널 렌더링 (body 포함)
+function renderDetailPanel(task, bodyContent) {
+  const info = wf(task.status);
+  const d = task.assignees.filter(a=>a.role==='designer');
+  const p = task.assignees.filter(a=>a.role==='publisher');
+
+  // 전체 작업량 (startDateTime ~ dueDateTime)
+  const totalMd = (task.startDateTime && task.dueDateTime)
+    ? calcMdFromDatetime(task.startDateTime, task.dueDateTime) : null;
+
+  // 담당자별 시간 파싱
+  const assigneeTimes = parseAssigneeTime(bodyContent, task.startDateTime || task.createdAt);
+  const hasAssigneeTimes = Object.keys(assigneeTimes).length > 0;
+
+  // 담당자별 MD 계산
+  const assigneeMdRows = task.assignees.map(a => {
+    const times = assigneeTimes[a.name];
+    if (!times || !times.length) return null;
+    const md = times.reduce((sum, t) => sum + (calcMdFromDatetime(t.startDT, t.endDT)||0), 0);
+    const timeLabels = times.map(t => {
+      const s = new Date(t.startDT), e = new Date(t.endDT);
+      const fmt = d => `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      return `${fmt(s)}~${fmt(e)}`;
+    }).join(', ');
+    return { name: a.name, role: a.role, md, timeLabels };
+  }).filter(Boolean);
+
+  document.getElementById('detail-body').innerHTML = `
+    <div style="display:flex;align-items:flex-start;gap:7px;margin-bottom:12px">
+      ${task.priority==='urgent'?'<span style="font-size:10px;padding:2px 6px;border-radius:3px;background:#FCEBEB;color:#A32D2D;font-weight:500;flex-shrink:0;margin-top:2px">긴급</span>':''}
+      <div style="font-size:14px;font-weight:500;color:var(--text);line-height:1.4">
+        <a href="${task.doorayUrl}" target="_blank" style="color:inherit;text-decoration:none;display:flex;align-items:flex-start;gap:5px" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
+          ${task.title}
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="flex-shrink:0;margin-top:3px;opacity:.4"><path d="M5 2H2a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1V7M8 1h3m0 0v3m0-3L5 7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="dsect"><div class="dsect-lbl">상태</div>
+      <span style="font-size:12px;padding:4px 10px;border-radius:99px;background:${info.bg};color:${info.c}">${task.status}</span>
+    </div>
+
+    ${d.length?`<div class="dsect"><div class="dsect-lbl">디자이너</div><div class="chips">${d.map(a=>`<span class="chip d" style="font-size:11px">${a.name}</span>`).join('')}</div></div>`:''}
+    ${p.length?`<div class="dsect"><div class="dsect-lbl">퍼블리셔</div><div class="chips">${p.map(a=>`<span class="chip p" style="font-size:11px">${a.name}</span>`).join('')}</div></div>`:''}
+
+    <div class="dsect"><div class="dsect-lbl">시작일</div>
+      <div style="font-size:13px;color:var(--text)">${task.startDateTime ? new Date(task.startDateTime).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : (task.startDate||'-')}</div>
+    </div>
+    <div class="dsect"><div class="dsect-lbl">완료일</div>
+      <div style="font-size:13px;color:var(--text)">${task.dueDateTime ? new Date(task.dueDateTime).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : (task.due||'-')}</div>
+    </div>
+
+    ${totalMd ? `<div class="dsect"><div class="dsect-lbl">전체 작업량</div>
+      <div style="font-size:13px;font-weight:500;color:var(--text)">${mdLabel(totalMd)}</div>
+    </div>` : ''}
+
+    ${assigneeMdRows.length ? `
+    <div class="dsect">
+      <div class="dsect-lbl">담당자별 작업량 <span style="font-size:9px;color:var(--text3)">(본문 @이름: HH:MM~HH:MM 기준)</span></div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        ${assigneeMdRows.map(r=>`
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;background:var(--bg3)">
+            <span class="chip ${r.role==='designer'?'d':'p'}" style="font-size:11px;flex-shrink:0">${r.name}</span>
+            <span style="font-size:10px;color:var(--text3);flex:1">${r.timeLabels}</span>
+            <span style="font-size:12px;font-weight:500;color:var(--text)">${mdLabel(r.md)}</span>
+          </div>`).join('')}
+      </div>
+    </div>` : `
+    <div class="dsect">
+      <div class="dsect-lbl">담당자별 작업량</div>
+      <div style="font-size:11px;color:var(--text3);padding:8px 0;line-height:1.7">
+        두레이 본문에 아래 형식으로 입력하면 자동 계산됩니다:<br>
+        <code style="font-size:10px;background:var(--bg3);padding:2px 6px;border-radius:4px;display:inline-block;margin-top:4px">@김지인: 09:00~12:00<br>@김성엽: 13:00~17:30</code>
+      </div>
+    </div>`}
+
+    <div class="dsect"><div class="dsect-lbl">업무번호</div>
+      <div style="font-size:11px;color:var(--text2)">${task.taskNumber||'-'}</div>
+    </div>
+    <div class="dsect"><div class="dsect-lbl">진행상태</div>
+      <div style="font-size:11px;color:${task.closed?'#A32D2D':'#27500A'}">${task.closed?'● 완료됨':'● 진행중'}</div>
+    </div>
+    <div class="dsect"><div class="dsect-lbl">상태 변경</div>
+      ${STATUS_ORDER.map(s=>{
+        const si=wf(s);
+        return `<button class="st-btn" style="${task.status===s?`border-color:${si.c};background:${si.bg};color:${si.c};font-weight:500`:''}" onclick="changeStatus('${task.id}','${s}')">
+          <div class="sdot" style="background:${si.c}"></div>${s}${task.status===s?' ✓':''}
+        </button>`;
+      }).join('')}
+    </div>`;
+  document.getElementById('detail').classList.add('open');
+}
+
+// 상세 패널 (개별 API 조회 포함)
+async function showDetail(id) {
+  let task = null;
+  for (const pid of Object.keys(allTasks)) {
+    task = allTasks[pid].find(t=>t.id===id);
+    if (task) break;
+  }
+  if (!task) return;
+
+  // 패널 즉시 열고 로딩 표시
+  document.getElementById('detail-body').innerHTML = `
+    <div style="padding:20px;text-align:center;color:var(--text3)">
+      <div class="spinner" style="margin:0 auto 8px"></div>
+      <div style="font-size:12px">업무 정보 불러오는 중...</div>
+    </div>`;
+  document.getElementById('detail').classList.add('open');
+
+  // 본문 조회 (캐시 있으면 재사용)
+  let bodyContent = task._bodyCache || null;
+  if (!bodyContent && cfg.token && cfg.proxy) {
+    try {
+      const r = await fetch(
+        `${cfg.proxy}/proxy/project/v1/projects/${task.projectId}/posts/${task.id}`,
+        { headers:{'Authorization':`dooray-api ${cfg.token}`}, signal:AbortSignal.timeout(6000) }
+      );
+      if (r.ok) {
+        const data = await r.json();
+        bodyContent = data.result?.body?.content || '';
+        task._bodyCache = bodyContent; // 캐시 저장
+      }
+    } catch(e) {
+      console.warn('본문 조회 실패:', e.message);
+    }
+  }
+
+  renderDetailPanel(task, bodyContent);
+}
+
+function closeDetail() { document.getElementById('detail').classList.remove('open'); }
+
+
+// ── 드래그 앤 드롭 ─────────────────────────────────────────
+function onDragStart(e, taskId, fromStatus) {
+  dragTask = taskId;
+  dragSource = fromStatus;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', taskId);
+  // 약간 딜레이 후 dragging 클래스 (렌더링 순서 보장)
+  setTimeout(() => {
+    const el = document.querySelector(`[data-id="${taskId}"]`);
+    if (el) el.classList.add('dragging');
+  }, 0);
+}
+
+function onDragEnd(e) {
+  document.querySelectorAll('.task-card.dragging').forEach(el => el.classList.remove('dragging'));
+  document.querySelectorAll('.kboard-body.drag-over').forEach(el => el.classList.remove('drag-over'));
+  document.querySelectorAll('.kboard.drag-over-board').forEach(el => el.classList.remove('drag-over-board'));
+  document.querySelectorAll('.drop-placeholder').forEach(el => el.remove());
+  dragTask = null;
+  dragSource = null;
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const body = e.currentTarget;
+  if (!body.classList.contains('drag-over')) {
+    body.classList.add('drag-over');
+    body.closest('.kboard')?.classList.add('drag-over-board');
+    // 플레이스홀더 추가
+    if (!body.querySelector('.drop-placeholder')) {
+      const ph = document.createElement('div');
+      ph.className = 'drop-placeholder';
+      body.appendChild(ph);
+    }
+  }
+}
+
+function onDragLeave(e) {
+  const body = e.currentTarget;
+  // relatedTarget이 body 내부면 무시
+  if (body.contains(e.relatedTarget)) return;
+  body.classList.remove('drag-over');
+  body.closest('.kboard')?.classList.remove('drag-over-board');
+  body.querySelector('.drop-placeholder')?.remove();
+}
+
+async function onDrop(e, toStatus) {
+  e.preventDefault();
+  const body = e.currentTarget;
+  body.classList.remove('drag-over');
+  body.closest('.kboard')?.classList.remove('drag-over-board');
+  body.querySelector('.drop-placeholder')?.remove();
+
+  if (!dragTask || dragSource === toStatus) return;
+
+  // 로컬 상태 즉시 업데이트
+  for (const pid of Object.keys(allTasks)) {
+    const t = allTasks[pid].find(t => t.id === dragTask);
+    if (t) {
+      t.status = toStatus;
+      render();
+      // 두레이 API 동기화 (백그라운드)
+      syncStatusToDooray(t.id, t.projectId, toStatus);
+      break;
+    }
+  }
+}
+
+async function syncStatusToDooray(taskId, projectId, statusName) {
+  if (!cfg.token || !cfg.proxy) return;
+  try {
+    // 워크플로우 ID 조회 후 업데이트
+    const r = await fetch(
+      `${cfg.proxy}/proxy/project/v1/projects/${projectId}/workflows`,
+      { headers: {'Authorization': `dooray-api ${cfg.token}`}, signal: AbortSignal.timeout(5000) }
+    );
+    if (!r.ok) return;
+    const data = await r.json();
+    const wfList = data.result || [];
+    const wf = wfList.find(w => w.name === statusName);
+    if (!wf) return;
+
+    await fetch(
+      `${cfg.proxy}/proxy/project/v1/projects/${projectId}/posts/${taskId}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Authorization': `dooray-api ${cfg.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ workflowId: wf.id })
+      }
+    );
+    // 상태 업데이트 성공 배지 잠깐 표시
+    const badge = document.getElementById('conn-badge');
+    const orig = badge.className;
+    badge.className = 'badge green';
+    document.getElementById('conn-txt').textContent = '✓ 두레이 반영됨';
+    setTimeout(() => {
+      const total = Object.values(allTasks).reduce((s,a)=>s+a.length,0);
+      const now = new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+      badge.className = 'badge green';
+      document.getElementById('conn-txt').textContent = `연결됨 · ${total}건 · ${now}`;
+    }, 2000);
+  } catch(e) {
+    console.warn('상태 동기화 실패:', e.message);
+  }
+}
+
+function changeStatus(id, s) {
+  for (const pid of Object.keys(allTasks)) {
+    const t = allTasks[pid].find(t=>t.id===id);
+    if (t) {
+      t.status = s;
+      render();
+      showDetail(id);
+      break;
+    }
+  }
+}
+
+
+// ── 공고제작 보고 뷰 ─────────────────────────────────────────
+function renderGongoReport(c, allT) {
+  if (gongoTab === 'daily-lite') renderDailyLite(c, allT);
+  else renderWeeklyLite(c, allT);
+}
+
+// ── 일간 보고 (당일 18:00 이후 정산) ─────────────────────────
+function renderDailyReport(c, allT) {
+  const now = new Date();
+  const todayStr = fmtDateFull(now);
+
+  // 오늘 마감 업무 (closedAt 기준)
+  const rawTodayTasks = allT.filter(t => {
+    const d = t.closedAt || (t.closed ? t.createdAt?.slice(0,10) : null);
+    return d === todayStr;
+  });
+  const todayTasks = filterDup(rawTodayTasks);
+  const dupCount = rawTodayTasks.length - todayTasks.length;
+
+  const PUB = ['김성엽','유승비','이상봉'];
+
+  // 분류별 집계
+  function countByClassify(tasks) {
+    const r = {};
+    CLASSIFY_ITEMS.forEach(c => { r[c.key] = tasks.filter(t=>t.classify?.[c.key]).length; });
+    r.총건수 = tasks.length;
+    r.공고 = tasks.reduce((s,t)=>s+(t.itemCounts?.공고||0),0);
+    r.배너 = tasks.reduce((s,t)=>s+(t.itemCounts?.배너||0),0);
+    r.로고 = tasks.reduce((s,t)=>s+(t.itemCounts?.로고||0),0);
+    return r;
+  }
+
+  // 담당자별 집계
+  function countByPerson(tasks) {
+    const map = {};
+    tasks.forEach(t => {
+      t.assignees.forEach(a => {
+        if (!map[a.name]) map[a.name] = {role:a.role,tasks:[],공고:0,배너:0,로고:0};
+        map[a.name].tasks.push(t);
+        map[a.name].공고 += t.itemCounts?.공고||0;
+        if (!PUB.includes(a.name)) {
+          map[a.name].배너 += t.itemCounts?.배너||0;
+          map[a.name].로고 += t.itemCounts?.로고||0;
+        }
+        CLASSIFY_ITEMS.forEach(ci => {
+          if (!map[a.name][ci.key]) map[a.name][ci.key]=0;
+          if (t.classify?.[ci.key]) map[a.name][ci.key]++;
+        });
+      });
+    });
+    return map;
+  }
+
+  const cls = countByClassify(todayTasks);
+  const persons = countByPerson(todayTasks);
+  const isAfter18 = now.getHours() >= 18;
+
+  c.innerHTML = `
+    <div style="padding:16px 0">
+      <!-- 헤더 -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <div style="font-size:16px;font-weight:500;color:var(--text)">📋 일간 보고</div>
+        <div style="font-size:13px;color:var(--text2)">${todayStr} (${['일','월','화','수','목','금','토'][now.getDay()]})</div>
+        <div style="font-size:11px;padding:2px 8px;border-radius:99px;background:${isAfter18?'#EAF3DE':'#FAEEDA'};color:${isAfter18?'#27500A':'#633806'}">
+          ${isAfter18 ? '✓ 18:00 이후 정산' : `⏳ 정산까지 ${18-now.getHours()}시간`}
+        </div>
+        <div style="flex:1"></div>
+        <button onclick="toggleExcludeDup()" style="font-size:11px;padding:3px 10px;border-radius:99px;border:0.5px solid ${excludeDup?'#EF9F27':'var(--border)'};background:${excludeDup?'#FFF3CD':'var(--bg)'};color:${excludeDup?'#533F0E':'var(--text2)'};cursor:pointer;font-weight:${excludeDup?'500':'400'}">
+          ${excludeDup ? '✓ 중복 제외 중' : '중복 포함'}
+        </button>
+        <div style="font-size:11px;color:var(--text3)">${todayTasks.length}건${excludeDup&&dupCount?` <span style="color:#533F0E">(중복 ${dupCount}건 제외)</span>`:''} 완료</div>
+      </div>
+
+      <!-- 분류별 -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:8px;padding-bottom:4px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:8px">
+          분류별 작업량
+          <span style="font-size:10px;color:var(--text3);font-weight:400">수치 클릭 시 담당자 상세</span>
+          ${(() => {
+            const dupCnt = rawTodayTasks.filter(t=>isDupTask(t)).length;
+            return dupCnt ? `<button onclick="toggleExcludeDup()" style="font-size:10px;padding:2px 8px;border-radius:99px;background:${excludeDup?'#533F0E':'#FFF3CD'};color:${excludeDup?'#fff':'#533F0E'};border:0.5px solid #EF9F27;margin-left:auto;cursor:pointer" title="${excludeDup?'클릭 시 중복 포함':'클릭 시 중복 제외'}">중복 ${dupCnt}건 ${excludeDup?'제외중 ✓':'클릭시 제외'}</button>` : '';
+          })()}
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px">
+          ${CLASSIFY_ITEMS.map(ci => `
+            <div style="padding:10px;border-radius:8px;background:${ci.bg};border:0.5px solid ${ci.color}33;text-align:center;cursor:${(cls[ci.key]||0)>0?'pointer':'default'};transition:filter .12s"
+              onclick="toggleDrilldown('daily-cls-${ci.key}', this)"
+              onmouseover="if(${(cls[ci.key]||0)>0})this.style.filter='brightness(.93)'"
+              onmouseout="this.style.filter=''">
+              <div style="font-size:10px;color:${ci.color};font-weight:500;margin-bottom:3px">${ci.label}</div>
+              <div style="font-size:22px;font-weight:600;color:${ci.color}">${cls[ci.key]||0}<span style="font-size:11px">건</span></div>
+            </div>
+            <div id="daily-cls-${ci.key}" style="display:none;grid-column:1/-1;background:var(--bg);border:0.5px solid ${ci.color}55;border-radius:8px;padding:10px;margin-top:-2px">
+              <div style="font-size:10px;font-weight:500;color:${ci.color};margin-bottom:6px">${ci.label} — 담당자별</div>
+              ${Object.entries(persons)
+                .filter(([,data])=>data[ci.key]>0)
+                .sort((a,b)=>b[1][ci.key]-a[1][ci.key])
+                .map(([name,data])=>{
+                  const isPub = ['김성엽','유승비','이상봉'].includes(name);
+                  return `<div style="display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:5px;background:${ci.bg};margin-bottom:3px">
+                    <span class="tl-avatar ${isPub?'tl-av-p':'tl-av-d'}" style="width:20px;height:20px;font-size:9px">${name[0]}</span>
+                    <span style="font-size:11px;font-weight:500;flex:1">${name}</span>
+                    <span style="font-size:13px;font-weight:600;color:${ci.color}">${data[ci.key]}건</span>
+                  </div>`;
+                }).join('') || `<div style="font-size:11px;color:var(--text3)">없음</div>`}
+            </div>`).join('')}
+          ${[
+            ['공고',cls.공고,'개','#185FA5','#E6F1FB', persons],
+            ['배너',cls.배너,'개','#534AB7','#EEEDFE', persons],
+            ['로고',cls.로고,'개','#3B6D11','#EAF3DE', persons],
+          ].map(([lbl,val,unit,c2,bg,pm])=>`
+            <div style="padding:10px;border-radius:8px;background:${bg};border:0.5px solid ${c2}33;text-align:center;cursor:${val>0?'pointer':'default'};transition:filter .12s"
+              onclick="toggleDrilldown('daily-item-${lbl}', this)"
+              onmouseover="if(${val>0})this.style.filter='brightness(.93)'"
+              onmouseout="this.style.filter=''">
+              <div style="font-size:10px;color:${c2};font-weight:500;margin-bottom:3px">${lbl}</div>
+              <div style="font-size:22px;font-weight:600;color:${c2}">${val}<span style="font-size:11px">${unit}</span></div>
+            </div>
+            <div id="daily-item-${lbl}" style="display:none;grid-column:1/-1;background:var(--bg);border:0.5px solid ${c2}55;border-radius:8px;padding:10px;margin-top:-2px">
+              <div style="font-size:10px;font-weight:500;color:${c2};margin-bottom:6px">${lbl} — 담당자별</div>
+              ${Object.entries(pm)
+                .filter(([,d])=>d[lbl]>0)
+                .sort((a,b)=>b[1][lbl]-a[1][lbl])
+                .map(([name,d])=>{
+                  const isPub=['김성엽','유승비','이상봉'].includes(name);
+                  return `<div style="display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:5px;background:${bg};margin-bottom:3px">
+                    <span class="tl-avatar ${isPub?'tl-av-p':'tl-av-d'}" style="width:20px;height:20px;font-size:9px">${name[0]}</span>
+                    <span style="font-size:11px;font-weight:500;flex:1">${name}</span>
+                    <span style="font-size:13px;font-weight:600;color:${c2}">${d[lbl]}${unit}</span>
+                  </div>`;
+                }).join('') || `<div style="font-size:11px;color:var(--text3)">없음</div>`}
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <!-- 담당자별 -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:8px;padding-bottom:4px;border-bottom:0.5px solid var(--border)">담당자별 작업량</div>
+        ${Object.keys(persons).length === 0
+          ? '<div style="font-size:12px;color:var(--text3);padding:12px">오늘 완료된 업무가 없습니다</div>'
+          : `<div style="display:flex;flex-direction:column;gap:4px">
+          ${Object.entries(persons).sort((a,b)=>b[1].tasks.length-a[1].tasks.length).map(([name,data])=>{
+            const isPub = PUB.includes(name);
+            const avatarCls = isPub ? 'tl-av-p' : 'tl-av-d';
+            const classifyChips = CLASSIFY_ITEMS.filter(ci=>data[ci.key]>0)
+              .map(ci=>`<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:${ci.bg};color:${ci.color}">${ci.label} ${data[ci.key]}</span>`)
+              .join('');
+            return `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg);border:0.5px solid var(--border);border-radius:8px;flex-wrap:wrap">
+              <span class="tl-avatar ${avatarCls}">${name[0]}</span>
+              <span style="font-size:12px;font-weight:500;min-width:50px">${name}</span>
+              <span style="font-size:11px;color:var(--text3)">${data.tasks.length}건</span>
+              ${data.공고?`<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:#E6F1FB;color:#185FA5">공고 ${data.공고}</span>`:''}
+              ${data.배너?`<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:#EEEDFE;color:#534AB7">배너 ${data.배너}</span>`:''}
+              ${data.로고?`<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:#EAF3DE;color:#3B6D11">로고 ${data.로고}</span>`:''}
+              ${classifyChips}
+            </div>`;
+          }).join('')}
+        </div>`}
+      </div>
+
+    </div>`;
+}
+
+// ── 주간 보고 (목~목 기준) ────────────────────────────────────
+function renderWeeklyReport(c, allT) {
+  const { start, end } = getThursdayWeekStart(gongoWeekOffset);
+  const startStr = fmtDateFull(start);
+  const endPrev  = new Date(end); endPrev.setDate(end.getDate()-1);
+  const endStr   = fmtDateFull(endPrev);
+  const PUB = ['김성엽','유승비','이상봉'];
+
+  // 해당 주 업무
+  const rawWeekTasks = allT.filter(t => {
+    const d = t.closedAt || (t.closed ? t.createdAt?.slice(0,10) : null);
+    if (!d) return false;
+    return d >= startStr && d <= endStr;
+  });
+  const weekTasks = filterDup(rawWeekTasks);
+  const weekDupCount = rawWeekTasks.length - weekTasks.length;
+
+  // 일별 집계
+  const dayMap = {};
+  weekTasks.forEach(t => {
+    const dk = t.closedAt || t.createdAt?.slice(0,10);
+    if (!dk) return;
+    if (!dayMap[dk]) dayMap[dk] = {tasks:[],공고:0,배너:0,로고:0};
+    dayMap[dk].tasks.push(t);
+    dayMap[dk].공고 += t.itemCounts?.공고||0;
+    dayMap[dk].배너 += t.itemCounts?.배너||0;
+    dayMap[dk].로고 += t.itemCounts?.로고||0;
+  });
+
+  // 분류별 합산
+  const clsTotal = {};
+  CLASSIFY_ITEMS.forEach(ci => { clsTotal[ci.key] = weekTasks.filter(t=>t.classify?.[ci.key]).length; });
+  const totalGong = weekTasks.reduce((s,t)=>s+(t.itemCounts?.공고||0),0);
+  const totalBan  = weekTasks.reduce((s,t)=>s+(t.itemCounts?.배너||0),0);
+  const totalLogo = weekTasks.reduce((s,t)=>s+(t.itemCounts?.로고||0),0);
+
+  // 담당자별 합산
+  const personMap = {};
+  weekTasks.forEach(t => {
+    t.assignees.forEach(a => {
+      if (!personMap[a.name]) personMap[a.name] = {role:a.role,tasks:0,공고:0,배너:0,로고:0};
+      personMap[a.name].tasks++;
+      personMap[a.name].공고 += t.itemCounts?.공고||0;
+      if (!PUB.includes(a.name)) {
+        personMap[a.name].배너 += t.itemCounts?.배너||0;
+        personMap[a.name].로고 += t.itemCounts?.로고||0;
+      }
+      CLASSIFY_ITEMS.forEach(ci => {
+        if (!personMap[a.name][ci.key]) personMap[a.name][ci.key]=0;
+        if (t.classify?.[ci.key]) personMap[a.name][ci.key]++;
+      });
+    });
+  });
+
+  // 지난주 링크
+  const prevLinks = Array.from({length:4},(_,i)=>i+1).map(w=>{
+    const {start:ps,end:pe} = getThursdayWeekStart(-w);
+    const pePrev = new Date(pe); pePrev.setDate(pe.getDate()-1);
+    return `<a href="#" onclick="gongoWeekOffset=-${w};render();return false"
+      style="font-size:11px;color:var(--text2);padding:3px 8px;border-radius:4px;border:0.5px solid var(--border);text-decoration:none;background:var(--bg)">
+      ${fmtDate(ps)}~${fmtDate(pePrev)}
+    </a>`;
+  }).join('');
+
+  c.innerHTML = `
+    <div style="padding:16px 0">
+      <!-- 헤더 -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+        <div style="font-size:16px;font-weight:500;color:var(--text)">📊 주간 보고</div>
+        <div style="font-size:13px;color:var(--text2)">${fmtDate(start)} ~ ${fmtDate(endPrev)} (${weekTasks.length}건)</div>
+        ${gongoWeekOffset < 0 ? `<span style="font-size:11px;padding:2px 8px;border-radius:99px;background:#FAEEDA;color:#633806">이전 주</span>` : `<span style="font-size:11px;padding:2px 8px;border-radius:99px;background:#EAF3DE;color:#27500A">이번 주</span>`}
+        <div style="flex:1"></div>
+        <button onclick="toggleExcludeDup()" style="font-size:11px;padding:3px 10px;border-radius:99px;border:0.5px solid ${excludeDup?'#EF9F27':'var(--border)'};background:${excludeDup?'#FFF3CD':'var(--bg)'};color:${excludeDup?'#533F0E':'var(--text2)'};cursor:pointer;font-weight:${excludeDup?'500':'400'}">
+          ${excludeDup?'✓ 중복 제외 중':'중복 포함'}
+        </button>
+        ${weekDupCount?`<span style="font-size:11px;color:#533F0E">(중복 ${weekDupCount}건 제외)</span>`:''}
+        <button onclick="gongoWeekOffset=0;render()" style="font-size:11px;padding:3px 10px;border-radius:4px;border:0.5px solid var(--border);background:${gongoWeekOffset===0?'var(--text)':'var(--bg)'};color:${gongoWeekOffset===0?'var(--bg)':'var(--text2)'};cursor:pointer">이번 주</button>
+      </div>
+
+      <!-- 지난주 빠른 링크 -->
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;padding:8px 12px;background:var(--bg3);border-radius:8px;flex-wrap:wrap">
+        <span style="font-size:11px;color:var(--text3)">이전 주 보기:</span>
+        ${prevLinks}
+      </div>
+
+      <!-- 분류별 합산 -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:8px;padding-bottom:4px;border-bottom:0.5px solid var(--border)">분류별 작업량 (주간 합산) <span style="font-size:10px;color:var(--text3);font-weight:400">수치 클릭 시 담당자 상세</span></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px">
+          ${CLASSIFY_ITEMS.map(ci=>`
+            <div style="padding:10px;border-radius:8px;background:${ci.bg};border:0.5px solid ${ci.color}33;text-align:center;cursor:${(clsTotal[ci.key]||0)>0?'pointer':'default'};transition:filter .12s"
+              onclick="toggleDrilldown('week-cls-${ci.key}', this)"
+              onmouseover="if(${(clsTotal[ci.key]||0)>0})this.style.filter='brightness(.93)'"
+              onmouseout="this.style.filter=''">
+              <div style="font-size:10px;color:${ci.color};font-weight:500;margin-bottom:3px">${ci.label}</div>
+              <div style="font-size:20px;font-weight:600;color:${ci.color}">${clsTotal[ci.key]||0}<span style="font-size:11px">건</span></div>
+            </div>
+            <div id="week-cls-${ci.key}" style="display:none;grid-column:1/-1;background:var(--bg);border:0.5px solid ${ci.color}55;border-radius:8px;padding:10px;margin-top:-2px">
+              <div style="font-size:10px;font-weight:500;color:${ci.color};margin-bottom:6px">${ci.label} — 담당자별</div>
+              ${Object.entries(personMap)
+                .filter(([,d])=>d[ci.key]>0)
+                .sort((a,b)=>b[1][ci.key]-a[1][ci.key])
+                .map(([name,d])=>{
+                  const isPub=['김성엽','유승비','이상봉'].includes(name);
+                  return `<div style="display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:5px;background:${ci.bg};margin-bottom:3px">
+                    <span class="tl-avatar ${isPub?'tl-av-p':'tl-av-d'}" style="width:20px;height:20px;font-size:9px">${name[0]}</span>
+                    <span style="font-size:11px;font-weight:500;flex:1">${name}</span>
+                    <span style="font-size:13px;font-weight:600;color:${ci.color}">${d[ci.key]}건</span>
+                  </div>`;
+                }).join('') || `<div style="font-size:11px;color:var(--text3)">없음</div>`}
+            </div>`).join('')}
+          ${[['공고',totalGong,'#185FA5','#E6F1FB','공고'],['배너',totalBan,'#534AB7','#EEEDFE','배너'],['로고',totalLogo,'#3B6D11','#EAF3DE','로고']].map(([lbl,val,c2,bg,key])=>`
+            <div style="padding:10px;border-radius:8px;background:${bg};border:0.5px solid ${c2}33;text-align:center;cursor:${val>0?'pointer':'default'};transition:filter .12s"
+              onclick="toggleDrilldown('week-item-${lbl}', this)"
+              onmouseover="if(${val>0})this.style.filter='brightness(.93)'"
+              onmouseout="this.style.filter=''">
+              <div style="font-size:10px;color:${c2};font-weight:500;margin-bottom:3px">${lbl}</div>
+              <div style="font-size:20px;font-weight:600;color:${c2}">${val}<span style="font-size:11px">개</span></div>
+            </div>
+            <div id="week-item-${lbl}" style="display:none;grid-column:1/-1;background:var(--bg);border:0.5px solid ${c2}55;border-radius:8px;padding:10px;margin-top:-2px">
+              <div style="font-size:10px;font-weight:500;color:${c2};margin-bottom:6px">${lbl} — 담당자별</div>
+              ${Object.entries(personMap)
+                .filter(([,d])=>d[key]>0)
+                .sort((a,b)=>b[1][key]-a[1][key])
+                .map(([name,d])=>{
+                  const isPub=['김성엽','유승비','이상봉'].includes(name);
+                  return `<div style="display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:5px;background:${bg};margin-bottom:3px">
+                    <span class="tl-avatar ${isPub?'tl-av-p':'tl-av-d'}" style="width:20px;height:20px;font-size:9px">${name[0]}</span>
+                    <span style="font-size:11px;font-weight:500;flex:1">${name}</span>
+                    <span style="font-size:13px;font-weight:600;color:${c2}">${d[key]}개</span>
+                  </div>`;
+                }).join('') || `<div style="font-size:11px;color:var(--text3)">없음</div>`}
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <!-- 담당자별 주간 합산 -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:8px;padding-bottom:4px;border-bottom:0.5px solid var(--border)">담당자별 작업량 (주간 합산)</div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          ${Object.entries(personMap).sort((a,b)=>b[1].tasks-a[1].tasks).map(([name,data])=>{
+            const isPub = PUB.includes(name);
+            const avatarCls = isPub ? 'tl-av-p' : 'tl-av-d';
+            const classifyChips = CLASSIFY_ITEMS.filter(ci=>data[ci.key]>0)
+              .map(ci=>`<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:${ci.bg};color:${ci.color}">${ci.label} ${data[ci.key]}</span>`).join('');
+            return `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg);border:0.5px solid var(--border);border-radius:8px;flex-wrap:wrap">
+              <span class="tl-avatar ${avatarCls}">${name[0]}</span>
+              <span style="font-size:12px;font-weight:500;min-width:50px">${name}</span>
+              <span style="font-size:11px;color:var(--text3)">${data.tasks}건</span>
+              ${data.공고?`<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:#E6F1FB;color:#185FA5">공고 ${data.공고}</span>`:''}
+              ${data.배너?`<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:#EEEDFE;color:#534AB7">배너 ${data.배너}</span>`:''}
+              ${data.로고?`<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:#EAF3DE;color:#3B6D11">로고 ${data.로고}</span>`:''}
+              ${classifyChips}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <!-- 일별 상세 -->
+      <div>
+        <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:8px;padding-bottom:4px;border-bottom:0.5px solid var(--border)">일별 작업량</div>
+        ${Object.keys(dayMap).sort().reverse().map(dk => {
+          const dd = dayMap[dk];
+          const dayDate = new Date(dk);
+          const dayLabel = `${fmtDate(dayDate)} (${['일','월','화','수','목','금','토'][dayDate.getDay()]})`;
+          // 일별 분류
+          const dayCls = {};
+          CLASSIFY_ITEMS.forEach(ci => { dayCls[ci.key] = dd.tasks.filter(t=>t.classify?.[ci.key]).length; });
+          // 일별 담당자
+          const dayPersons = {};
+          dd.tasks.forEach(t => {
+            t.assignees.forEach(a => {
+              if (!dayPersons[a.name]) dayPersons[a.name] = {role:a.role,cnt:0};
+              dayPersons[a.name].cnt++;
+            });
+          });
+          return `<div style="margin-bottom:12px;background:var(--bg);border:0.5px solid var(--border);border-radius:10px;overflow:hidden">
+            <div style="padding:8px 12px;background:var(--bg3);border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <span style="font-size:12px;font-weight:500;color:var(--text)">${dayLabel}</span>
+              <span style="font-size:11px;color:var(--text3)">${dd.tasks.length}건</span>
+              <div style="flex:1"></div>
+              ${dd.공고?`<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:#E6F1FB;color:#185FA5">공고 ${dd.공고}</span>`:''}
+              ${dd.배너?`<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:#EEEDFE;color:#534AB7">배너 ${dd.배너}</span>`:''}
+              ${dd.로고?`<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:#EAF3DE;color:#3B6D11">로고 ${dd.로고}</span>`:''}
+            </div>
+            <div style="padding:8px 12px;display:flex;gap:12px;flex-wrap:wrap">
+              <div>
+                <div style="font-size:10px;color:var(--text3);margin-bottom:4px">분류</div>
+                <div style="display:flex;gap:3px;flex-wrap:wrap">
+                  ${CLASSIFY_ITEMS.filter(ci=>dayCls[ci.key]>0).map(ci=>`
+                    <span style="font-size:10px;padding:2px 7px;border-radius:3px;background:${ci.bg};color:${ci.color}">${ci.label} ${dayCls[ci.key]}</span>`).join('') || '<span style="font-size:10px;color:var(--text3)">-</span>'}
+                </div>
+              </div>
+              <div>
+                <div style="font-size:10px;color:var(--text3);margin-bottom:4px">담당자</div>
+                <div style="display:flex;gap:3px;flex-wrap:wrap">
+                  ${Object.entries(dayPersons).map(([n,v])=>`
+                    <span class="chip ${v.role==='designer'?'d':'p'}" style="font-size:10px">${n} ${v.cnt}</span>`).join('')}
+                </div>
+              </div>
+            </div>
+          </div>`;
+        }).join('') || '<div style="font-size:12px;color:var(--text3);padding:12px">이 주간에 완료된 업무가 없습니다</div>'}
+      </div>
+    </div>`;
+}
+
+// ── 공고요청 전용 뷰 (기존 - 목록/담당자별/통계) ─────────────
+const TMPL_COLORS = {
+  '일반':      {c:'#185FA5', bg:'#E6F1FB'},
+  '수정':      {c:'#BA7517', bg:'#FAEEDA'},
+  '외부':      {c:'#534AB7', bg:'#EEEDFE'},
+  '외부_이미지':{c:'#0F6E56', bg:'#E1F5EE'},
+  '긴급':      {c:'#A32D2D', bg:'#FCEBEB'},
+};
+
+function parseGongoDate(dateStr) {
+  // ISO → YYYY-MM-DD
+  if (!dateStr) return null;
+  return dateStr.slice(0,10);
+}
+
+function getWeekKey(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  // 월요일 기준 주
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day===0?-6:1);
+  const mon = new Date(d); mon.setDate(diff); mon.setHours(0,0,0,0);
+  return mon.toISOString().slice(0,10);
+}
+
+function renderGongo(c, tasks) {
+  const subTabs = `<div class="tl-sub-tabs" style="position:sticky;top:0;z-index:20">
+    <div class="tl-sub-tab ${gongoMode==='list'?'active':''}" onclick="setGongoMode('list')">전체 목록</div>
+    <div class="tl-sub-tab ${gongoMode==='person'?'active':''}" onclick="setGongoMode('person')">담당자별</div>
+    <div class="tl-sub-tab ${gongoMode==='stats'?'active':''}" onclick="setGongoMode('stats')">작업량 통계</div>
+    <div style="flex:1"></div>
+    <div style="display:flex;align-items:center;gap:6px;padding:0 12px;font-size:10px;color:var(--text3)">
+      <span>기간</span>
+      <select onchange="setGongoRange(this.value)" style="font-size:10px;padding:2px 6px;border-radius:4px;border:0.5px solid var(--border);background:var(--bg3);color:var(--text);outline:none">
+        <option value="day" ${gongoRange==='day'?'selected':''}>일별</option>
+        <option value="week" ${gongoRange==='week'?'selected':''}>주별</option>
+      </select>
+    </div>
+  </div>`;
+
+  let body = '';
+  if (gongoMode === 'list')   body = renderGongoList(tasks);
+  else if (gongoMode === 'person') body = renderGongoPerson(tasks);
+  else body = renderGongoStats(tasks);
+
+  c.innerHTML = subTabs + body;
+}
+
+function renderGongoList(tasks) {
+  // 날짜 그룹핑
+  const groups = {};
+  tasks.forEach(t => {
+    const dateKey = gongoRange==='week'
+      ? getWeekKey(t.closedAt || t.createdAt)
+      : (t.closedAt || t.createdAt || '').slice(0,10);
+    if (!dateKey) return;
+    if (!groups[dateKey]) groups[dateKey] = [];
+    groups[dateKey].push(t);
+  });
+
+  const sortedKeys = Object.keys(groups).sort().reverse();
+  if (!sortedKeys.length) return '<div class="empty">표시할 업무가 없습니다</div>';
+
+  return '<div style="padding:12px 0">' + sortedKeys.map(key => {
+    const dayTasks = groups[key];
+    // 합산
+    const total공고 = dayTasks.reduce((s,t)=>s+(t.itemCounts?.공고||0),0);
+    const total배너 = dayTasks.reduce((s,t)=>s+(t.itemCounts?.배너||0),0);
+    const total로고 = dayTasks.reduce((s,t)=>s+(t.itemCounts?.로고||0),0);
+    const totalAll = total공고+total배너+total로고;
+
+    const label = gongoRange==='week'
+      ? `${key} 주 (${dayTasks.length}건)`
+      : `${key} (${dayTasks.length}건)`;
+
+    return `<div style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:10px;padding:7px 12px;background:var(--bg3);border-radius:6px;margin-bottom:6px;border:0.5px solid var(--border)">
+        <div style="font-size:12px;font-weight:500;color:var(--text)">${label}</div>
+        <div style="flex:1"></div>
+        ${total공고?`<span style="font-size:10px;padding:2px 7px;border-radius:99px;background:#E6F1FB;color:#185FA5;font-weight:500">공고 ${total공고}</span>`:''}
+        ${total배너?`<span style="font-size:10px;padding:2px 7px;border-radius:99px;background:#EEEDFE;color:#534AB7;font-weight:500">배너 ${total배너}</span>`:''}
+        ${total로고?`<span style="font-size:10px;padding:2px 7px;border-radius:99px;background:#EAF3DE;color:#3B6D11;font-weight:500">로고 ${total로고}</span>`:''}
+        ${totalAll?`<span style="font-size:10px;padding:2px 7px;border-radius:99px;background:var(--text);color:var(--bg);font-weight:500">합계 ${totalAll}</span>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px">
+        ${dayTasks.map(t => {
+          const tc = TMPL_COLORS[t.tmpl]||TMPL_COLORS['일반'];
+          const d = t.assignees.filter(a=>a.role==='designer');
+          const p = t.assignees.filter(a=>a.role==='publisher');
+          return `<div style="display:grid;grid-template-columns:80px 1fr auto auto;align-items:center;gap:8px;padding:7px 12px;background:var(--bg);border:0.5px solid var(--border);border-radius:7px;cursor:pointer" onclick="showDetail('${t.id}')">
+            <span style="font-size:10px;padding:2px 7px;border-radius:99px;background:${tc.bg};color:${tc.c};text-align:center;font-weight:500">${t.tmpl}</span>
+            <div style="font-size:11px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.title}</div>
+            <div style="display:flex;gap:3px;flex-shrink:0">
+              ${d.map(a=>`<span class="chip d" style="font-size:9px">${a.name}</span>`).join('')}
+              ${p.map(a=>`<span class="chip p" style="font-size:9px">${a.name}</span>`).join('')}
+            </div>
+            <div style="display:flex;gap:3px;flex-shrink:0;flex-wrap:wrap;max-width:200px;justify-content:flex-end">
+              ${t.itemCounts?.공고?`<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#E6F1FB;color:#185FA5">공고${t.itemCounts.공고}</span>`:''}
+              ${t.itemCounts?.배너?`<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#EEEDFE;color:#534AB7">배너${t.itemCounts.배너}</span>`:''}
+              ${t.itemCounts?.로고?`<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#EAF3DE;color:#3B6D11">로고${t.itemCounts.로고}</span>`:''}
+              ${CLASSIFY_ITEMS.filter(c=>t.classify?.[c.key]).map(c=>`<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:${c.bg};color:${c.color}">${c.label}</span>`).join('')}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+function renderGongoPerson(tasks) {
+  // 담당자별 그룹
+  const personMap = {};
+  tasks.forEach(t => {
+    t.assignees.forEach(a => {
+      if (!personMap[a.name]) personMap[a.name] = {role:a.role, tasks:[]};
+      personMap[a.name].tasks.push(t);
+    });
+  });
+
+  const sorted = Object.entries(personMap).sort((a,b)=>b[1].tasks.length-a[1].tasks.length);
+  if (!sorted.length) return '<div class="empty">담당자 정보가 없습니다</div>';
+
+  return '<div style="padding:12px 0;display:flex;flex-direction:column;gap:12px">' +
+    sorted.map(([name, {role, tasks: pt}]) => {
+      const total공고 = pt.reduce((s,t)=>s+(t.itemCounts?.공고||0),0);
+      const total배너 = isPub(name) ? 0 : pt.reduce((s,t)=>s+(t.itemCounts?.배너||0),0);
+      const total로고 = isPub(name) ? 0 : pt.reduce((s,t)=>s+(t.itemCounts?.로고||0),0);
+      const totalAll = total공고+total배너+total로고;
+      const avatarCls = role==='designer'?'tl-av-d':'tl-av-p';
+      const overlapMd2 = calcMdWithOverlapExcluded(pt);
+      const overlapLbl2 = overlapMd2 !== null ? mdLabel(overlapMd2) : '';
+
+      // 날짜별 그룹
+      const dateGroups = {};
+      pt.forEach(t => {
+        const dk = gongoRange==='week'
+          ? getWeekKey(t.closedAt||t.createdAt)
+          : (t.closedAt||t.createdAt||'').slice(0,10);
+        if (!dk) return;
+        if (!dateGroups[dk]) dateGroups[dk] = [];
+        dateGroups[dk].push(t);
+      });
+
+      return `<div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg3);border-bottom:0.5px solid var(--border);flex-wrap:wrap">
+          <span class="tl-avatar ${avatarCls}" style="width:28px;height:28px;font-size:11px">${name[0]}</span>
+          <strong style="font-size:13px;color:var(--text)">${name}</strong>
+          <span style="font-size:10px;color:var(--text3)">${pt.length}건</span>
+          ${overlapLbl2?`<span style="font-size:9px;padding:1px 6px;border-radius:99px;background:var(--text);color:var(--bg);font-weight:500" title="중복 제외 실작업량">⏱ ${overlapLbl2}</span>`:''}
+          <div style="flex:1"></div>
+          ${total공고?`<span style="font-size:10px;padding:2px 7px;border-radius:99px;background:#E6F1FB;color:#185FA5;font-weight:500">공고 ${total공고}</span>`:''}
+          ${total배너?`<span style="font-size:10px;padding:2px 7px;border-radius:99px;background:#EEEDFE;color:#534AB7;font-weight:500">배너 ${total배너}</span>`:''}
+          ${total로고?`<span style="font-size:10px;padding:2px 7px;border-radius:99px;background:#EAF3DE;color:#3B6D11;font-weight:500">로고 ${total로고}</span>`:''}
+          ${totalAll?`<span style="font-size:10px;padding:2px 7px;border-radius:99px;background:var(--text);color:var(--bg);font-weight:500">합계 ${totalAll}</span>`:''}
+        </div>
+        <div style="padding:8px 12px;display:flex;flex-direction:column;gap:6px">
+          ${Object.keys(dateGroups).sort().reverse().map(dk => {
+            const dTasks = dateGroups[dk];
+            const d공고 = dTasks.reduce((s,t)=>s+(t.itemCounts?.공고||0),0);
+            const d배너 = isPub(name) ? 0 : dTasks.reduce((s,t)=>s+(t.itemCounts?.배너||0),0);
+            const d로고 = isPub(name) ? 0 : dTasks.reduce((s,t)=>s+(t.itemCounts?.로고||0),0);
+            const dAll = d공고+d배너+d로고;
+            return `<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;background:var(--bg3)">
+              <span style="font-size:10px;color:var(--text2);min-width:72px">${dk}</span>
+              <span style="font-size:10px;color:var(--text3)">${dTasks.length}건</span>
+              <div style="flex:1"></div>
+              ${d공고?`<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#E6F1FB;color:#185FA5">공고${d공고}</span>`:''}
+              ${d배너?`<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#EEEDFE;color:#534AB7">배너${d배너}</span>`:''}
+              ${d로고?`<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#EAF3DE;color:#3B6D11">로고${d로고}</span>`:''}
+              ${dAll?`<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:var(--text);color:var(--bg);font-weight:500">합계${dAll}</span>`:''}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }).join('') + '</div>';
+}
+
+// ── 분류 항목 정의 ───────────────────────────────────────────
+const CLASSIFY_ITEMS = [
+  // 신규 공고 태그별
+  { key:'신규_기존',     label:'신규(이미지_기존)',     color:'#AD5D00', bg:'#FFD6B6' },
+  { key:'신규_실사',     label:'신규(이미지_실사)',     color:'#1A6641', bg:'#BBF7E0' },
+  { key:'신규_일러스트', label:'신규(이미지_일러스트)', color:'#185FA5', bg:'#C8E2FF' },
+  { key:'신규_통이미지', label:'신규(통이미지_변환)',   color:'#8A7B00', bg:'#FAEB8A' },
+  // 기존 분류
+  { key:'수정',          label:'수정',                  color:'#BA7517', bg:'#FAEEDA' },
+  { key:'외부',          label:'외부',                  color:'#534AB7', bg:'#EEEDFE' },
+  { key:'배너',          label:'배너',                  color:'#185FA5', bg:'#E6F1FB' },
+  { key:'WORKS공고',     label:'WORKS공고',             color:'#0F6E56', bg:'#E1F5EE' },
+  { key:'RASP25',        label:'RASP_2.5',              color:'#888780', bg:'#F1EFE8' },
+  { key:'일반공고',      label:'일반공고',              color:'#3B6D11', bg:'#EAF3DE' },
+  { key:'로고',          label:'로고',                  color:'#A32D2D', bg:'#FCEBEB' },
+  { key:'버튼',          label:'버튼',                  color:'#533F0E', bg:'#FFF3CD' },
+  { key:'롤링이미지',    label:'롤링이미지',            color:'#185FA5', bg:'#DBEAFE' },
+  { key:'인트로페이지',  label:'인트로페이지',          color:'#6D3B11', bg:'#FDE8D8' },
+];
+
+function emptyCount() {
+  const o = {tasks:0,공고:0,배너:0,로고:0,byPerson:{},byTmpl:{}};
+  CLASSIFY_ITEMS.forEach(c => o[c.key] = 0);
+  return o;
+}
+
+const PUB_NAMES = ['김성엽','유승비','이상봉'];
+
+function buildDateMap(tasks) {
+  const dateMap = {};
+  tasks.forEach(t => {
+    const rawDate = (t.closedAt || t.createdAt || '').slice(0,10);
+    if (!rawDate || rawDate < GONGO_STATS_FROM) return;
+    const dk = gongoRange==='week' ? getWeekKey(rawDate) : rawDate;
+    if (!dk) return;
+    if (!dateMap[dk]) dateMap[dk] = emptyCount();
+    const d = dateMap[dk];
+    d.tasks++;
+    d.공고 += t.itemCounts?.공고||0;
+    d.배너 += t.itemCounts?.배너||0;
+    d.로고 += t.itemCounts?.로고||0;
+
+    // 분류 카운팅
+    const activeClassify = CLASSIFY_ITEMS.filter(c => t.classify?.[c.key]);
+    activeClassify.forEach(c => { d[c.key]++; });
+
+    // 중복 판단: 같은 그룹 안에서 2개 이상일 때만 중복
+    // 그룹A: 공고 스타일 (신규 4가지)
+    // 그룹B: 업무 유형 (수정/외부/WORKS/RASP/일반공고/배너/로고/버튼/롤링/인트로)
+    const GROUP_A = ['신규_기존','신규_실사','신규_일러스트','신규_통이미지'];
+    const groupA = activeClassify.filter(c => GROUP_A.includes(c.key));
+    const groupB = activeClassify.filter(c => !GROUP_A.includes(c.key));
+    const isDup = groupA.length >= 2 || groupB.length >= 2;
+    if (isDup) {
+      if (!d._중복) d._중복 = 0;
+      d._중복++;
+      if (!d._중복tasks) d._중복tasks = [];
+      d._중복tasks.push({id:t.id, title:t.title, labels: activeClassify.map(c=>c.label)});
+    }
+
+    // 담당자별
+    t.assignees.forEach(a => {
+      if (!d.byPerson[a.name]) d.byPerson[a.name] = emptyCount();
+      const p = d.byPerson[a.name];
+      p.tasks++;
+      p.공고 += t.itemCounts?.공고||0;
+      if (!PUB_NAMES.includes(a.name)) {
+        p.배너 += t.itemCounts?.배너||0;
+        p.로고 += t.itemCounts?.로고||0;
+      }
+      CLASSIFY_ITEMS.forEach(c => { if (t.classify?.[c.key]) p[c.key]++; });
+    });
+
+    // 템플릿별
+    if (!d.byTmpl[t.tmpl]) d.byTmpl[t.tmpl] = emptyCount();
+    const tmplD = d.byTmpl[t.tmpl];
+    tmplD.tasks++;
+    tmplD.공고 += t.itemCounts?.공고||0;
+    tmplD.배너 += t.itemCounts?.배너||0;
+    tmplD.로고 += t.itemCounts?.로고||0;
+  });
+  return dateMap;
+}
+
+function statRow(label, data, bg, textColor, showClassify) {
+  const total = (data.공고||0)+(data.배너||0)+(data.로고||0);
+  const classifyChips = showClassify
+    ? CLASSIFY_ITEMS.filter(c => data[c.key]>0)
+        .map(c=>`<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:${c.bg};color:${c.color};flex-shrink:0">${c.label} ${data[c.key]}</span>`)
+        .join('')
+    : '';
+  const dupBadge = (data._중복||0) > 0
+    ? `<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:#FFF3CD;color:#533F0E;border:0.5px solid #EF9F27;flex-shrink:0" title="2개 이상 분류에 해당하는 업무">중복 ${data._중복}</span>`
+    : '';
+  return `<div style="display:flex;align-items:flex-start;gap:6px;padding:6px 10px;border-radius:5px;background:${bg||'var(--bg3)'};margin-bottom:3px;flex-wrap:wrap">
+    <span style="font-size:11px;color:${textColor||'var(--text)'};min-width:76px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${label}</span>
+    <span style="font-size:10px;color:var(--text3);flex-shrink:0">${data.tasks}건</span>
+    ${data.공고?`<span style="font-size:9px;padding:2px 5px;border-radius:3px;background:#E6F1FB;color:#185FA5;flex-shrink:0">공고 ${data.공고}</span>`:''}
+    ${data.배너?`<span style="font-size:9px;padding:2px 5px;border-radius:3px;background:#EEEDFE;color:#534AB7;flex-shrink:0">배너 ${data.배너}</span>`:''}
+    ${data.로고?`<span style="font-size:9px;padding:2px 5px;border-radius:3px;background:#EAF3DE;color:#3B6D11;flex-shrink:0">로고 ${data.로고}</span>`:''}
+    <span style="font-size:10px;padding:2px 6px;border-radius:99px;background:var(--text);color:var(--bg);font-weight:500;flex-shrink:0">합계 ${total}</span>
+    ${dupBadge}
+    ${classifyChips}
+  </div>`;
+}
+
+function renderGongoStats(tasks) {
+  const dateMap = buildDateMap(tasks);
+  const sortedKeys = Object.keys(dateMap).sort().reverse();
+  if (!sortedKeys.length) return `<div class="empty">${GONGO_STATS_FROM} 이후 통계 데이터가 없습니다</div>`;
+
+  // 전체 합산
+  const grand = {tasks:0,공고:0,배너:0,로고:0,byPerson:{},byTmpl:{}};
+  Object.values(dateMap).forEach(d => {
+    grand.tasks+=d.tasks; grand.공고+=d.공고; grand.배너+=d.배너; grand.로고+=d.로고;
+    if (!grand._중복) grand._중복=0;
+    grand._중복+=(d._중복||0);
+    Object.entries(d.byPerson).forEach(([n,v])=>{
+      if(!grand.byPerson[n])grand.byPerson[n]={tasks:0,공고:0,배너:0,로고:0};
+      grand.byPerson[n].tasks+=v.tasks; grand.byPerson[n].공고+=v.공고;
+      grand.byPerson[n].배너+=v.배너; grand.byPerson[n].로고+=v.로고;
+    });
+    Object.entries(d.byTmpl).forEach(([k,v])=>{
+      if(!grand.byTmpl[k])grand.byTmpl[k]={tasks:0,공고:0,배너:0,로고:0};
+      grand.byTmpl[k].tasks+=v.tasks; grand.byTmpl[k].공고+=v.공고;
+      grand.byTmpl[k].배너+=v.배너; grand.byTmpl[k].로고+=v.로고;
+    });
+  });
+
+  let html = '<div style="padding:12px 0">';
+
+  // ── 상단: 요약 카드 4개 ──────────────────────────────────
+  html += `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+    ${[
+      ['전체 업무', grand.tasks,    '건', 'var(--bg3)', 'var(--text)'],
+      ['공고 합계', grand.공고,     '개', '#E6F1FB',    '#185FA5'   ],
+      ['배너 합계', grand.배너,     '개', '#EEEDFE',    '#534AB7'   ],
+      ['로고 합계', grand.로고,     '개', '#EAF3DE',    '#3B6D11'   ],
+    ].map(([lbl,val,unit,bg,c])=>`
+      <div style="padding:12px;border-radius:var(--radius-lg);background:${bg};border:0.5px solid var(--border);text-align:center">
+        <div style="font-size:10px;color:${c};opacity:.7;margin-bottom:4px">${lbl}</div>
+        <div style="font-size:22px;font-weight:500;color:${c}">${val}<span style="font-size:12px">${unit}</span></div>
+        <div style="font-size:9px;color:${c};opacity:.5;margin-top:2px">${GONGO_STATS_FROM} 이후</div>
+      </div>`).join('')}
+  </div>`;
+
+  // ── 중단: 일별/주별 테이블 (전체 너비) ──────────────────
+  const periodLabel = gongoRange==='week' ? '주별' : '일별';
+  html += `<div style="margin-bottom:16px">
+    <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:8px">
+      ${periodLabel} 작업량
+      <span style="font-size:10px;color:var(--text3);font-weight:400">(${GONGO_STATS_FROM} 이후)</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px">
+      ${sortedKeys.map(dk => {
+        const d = dateMap[dk];
+        const label = gongoRange==='week'
+          ? `${dk} 주 시작`
+          : dk;
+        return statRow(label, d);
+      }).join('')}
+    </div>
+  </div>`;
+
+  // ── 분류별 합산 (전체) ──────────────────────────────────
+  html += `<div style="margin-bottom:16px">
+    <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:8px">분류별 합산</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px">
+      ${CLASSIFY_ITEMS.map(c => {
+        const val = grand[c.key]||0;
+        return `<div style="padding:10px 12px;border-radius:8px;background:${c.bg};border:0.5px solid ${c.color}33;text-align:center">
+          <div style="font-size:10px;color:${c.color};font-weight:500;margin-bottom:2px">${c.label}</div>
+          <div style="font-size:20px;font-weight:500;color:${c.color}">${val}<span style="font-size:11px">건</span></div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+
+  // ── 하단: 담당자별 + 템플릿별 나란히 ──────────────────
+  html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">`;
+
+  // 담당자별 (분류 포함)
+  html += `<div>
+    <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:8px">담당자별 합산</div>`;
+  Object.entries(grand.byPerson)
+    .sort((a,b)=>(b[1].공고+b[1].배너+b[1].로고)-(a[1].공고+a[1].배너+a[1].로고))
+    .forEach(([name,data]) => { html += statRow(name, data, null, null, true); });
+  html += `</div>`;
+
+  // 템플릿별
+  html += `<div>
+    <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:8px">템플릿별 합산</div>`;
+  Object.entries(grand.byTmpl)
+    .sort((a,b)=>b[1].tasks-a[1].tasks)
+    .forEach(([tmpl,data]) => {
+      const tc = TMPL_COLORS[tmpl]||TMPL_COLORS['일반'];
+      html += statRow(tmpl, data, tc.bg, tc.c);
+    });
+  html += `</div>`;
+
+  html += `</div></div>`;
+  return html;
+}
+
+function setGongoMode(mode) { gongoMode=mode; render(); }
+function setGongoRange(v) { gongoRange=v; render(); }
+function setGongoTab(tab, el) {
+  gongoTab = tab;
+  document.querySelectorAll('#gongo-tabs .nav-tab').forEach(e=>e.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+// 목요일 기준 주 시작일 계산
+function getThursdayWeekStart(offsetWeeks) {
+  const today = new Date();
+  const dow = today.getDay(); // 0=일, 4=목
+  // 이번주 목요일(기준점)
+  const diffToThur = (dow >= 4) ? dow - 4 : dow + 3;
+  const thisThur = new Date(today);
+  thisThur.setDate(today.getDate() - diffToThur + (offsetWeeks * 7));
+  thisThur.setHours(0, 0, 0, 0);
+  const nextThur = new Date(thisThur);
+  nextThur.setDate(thisThur.getDate() + 7);
+  nextThur.setHours(23, 59, 59, 999);
+  return { start: thisThur, end: nextThur };
+}
+
+function fmtDate(d) {
+  return `${d.getMonth()+1}/${d.getDate()}`;
+}
+function fmtDateFull(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// 중복 제외 토글
+function toggleExcludeDup() {
+  excludeDup = !excludeDup;
+  render();
+}
+
+// 중복 제외 시 업무 필터 (같은 그룹 내 중복만 제외)
+const _DUP_GROUP_A = ['신규_기존','신규_실사','신규_일러스트','신규_통이미지'];
+function isDupTask(t) {
+  const ac = CLASSIFY_ITEMS.filter(c => t.classify?.[c.key]);
+  const gA = ac.filter(c => _DUP_GROUP_A.includes(c.key));
+  const gB = ac.filter(c => !_DUP_GROUP_A.includes(c.key));
+  return gA.length >= 2 || gB.length >= 2;
+}
+function filterDup(tasks) {
+  if (!excludeDup) return tasks;
+  return tasks.filter(t => !isDupTask(t));
+}
+
+// 드릴다운 토글 (분류 클릭 시 담당자 상세 펼치기/닫기)
+function toggleDrilldown(id, cardEl) {
+  const panel = document.getElementById(id);
+  if (!panel) return;
+  const isOpen = panel.style.display !== 'none';
+  // 같은 그리드 내 모든 드릴다운 닫기
+  const grid = panel.parentElement;
+  grid.querySelectorAll('[id^="daily-"],[id^="week-"]').forEach(el => {
+    el.style.display = 'none';
+  });
+  if (!isOpen) panel.style.display = 'block';
+}
+
+
+// ── 공고 건수 파싱 (제목에서 공고N) ─────────────────────────
+function getGongoCnt(t) {
+  const m = t.title.match(/공고(\d+)/);
+  return m ? parseInt(m[1]) : 0;
+}
+
+// 퍼블리셔 여부
+const PUB_SET = new Set(['김성엽','유승비','이상봉']);
+
+// 담당자별 작업량 집계 (라이트)
+// 디자이너: 공고+배너+로고, 퍼블리셔: 공고만
+// 파일 업로드 있는 업무는 fileCount 합산
+function buildLitePersonMap(tasks) {
+  const map = {};
+  tasks.forEach(t => {
+    const gongoCnt = t.itemCounts?.공고 || getGongoCnt(t);
+    const banerCnt = t.itemCounts?.배너 || 0;
+    const logoCnt  = t.itemCounts?.로고 || 0;
+    const fileCnt  = t.fileCount || 0;
+    // 수정/외부 여부
+    const isSujeong = t.classify?.수정 || false;
+    const isOuter   = t.classify?.외부  || false;
+    // 순수 공고 = 수정/외부 아닌 공고
+    const pureGongo = (!isSujeong && !isOuter) ? gongoCnt : 0;
+    const sujeongGongo = isSujeong ? gongoCnt : 0;
+    const outerGongo   = isOuter   ? gongoCnt : 0;
+
+    // 2인 담당 여부: 디자이너 + 퍼블리셔 동시 존재
+    const hasDesigner  = t.assignees.some(a => !PUB_SET.has(a.name));
+    const hasPublisher = t.assignees.some(a =>  PUB_SET.has(a.name));
+    const isTwoPerson  = hasDesigner && hasPublisher;
+
+    t.assignees.forEach(a => {
+      if (!map[a.name]) map[a.name] = {role:a.role, tasks:0, 공고:0, 공고이미지:0, 수정:0, 외부:0, 배너:0, 로고:0, files:0};
+      map[a.name].tasks++;
+      map[a.name].수정  += sujeongGongo;
+      map[a.name].외부  += outerGongo;
+      map[a.name].files += fileCnt;
+
+      if (isTwoPerson && !isSujeong && !isOuter) {
+        // 2인 순수 공고: 디자이너→공고이미지, 퍼블리셔→공고
+        if (PUB_SET.has(a.name)) {
+          map[a.name].공고 += pureGongo;
+        } else {
+          map[a.name].공고이미지 += pureGongo;
+        }
+      } else {
+        // 1인 or 수정/외부: 모두 공고
+        map[a.name].공고 += pureGongo;
+      }
+
+      if (!PUB_SET.has(a.name)) {
+        map[a.name].배너 += banerCnt;
+        map[a.name].로고 += logoCnt;
+      }
+    });
+  });
+  return map;
+}
+
+// ── 일간 라이트 ───────────────────────────────────────────────
+function renderDailyLite(c, allT) {
+  const now = new Date();
+  const todayStr = fmtDateFull(now);
+  const isAfter18 = now.getHours() >= 18;
+
+  const todayTasks = allT.filter(t => {
+    const d = t.closedAt || (t.closed ? t.createdAt?.slice(0,10) : null);
+    return d === todayStr;
+  });
+
+  const personMap = buildLitePersonMap(todayTasks);
+  const sorted = Object.entries(personMap).sort((a,b) => b[1].공고 - a[1].공고);
+
+  // 전체 합계
+  const totalTasks = todayTasks.length;
+  const totalGongo   = Object.values(personMap).reduce((s,d)=>s+d.공고,0);
+  const totalSujeong = Object.values(personMap).reduce((s,d)=>s+d.수정,0);
+  const totalOuter   = Object.values(personMap).reduce((s,d)=>s+d.외부,0);
+  const totalBaner   = Object.values(personMap).reduce((s,d)=>s+d.배너,0);
+  const totalLogo    = Object.values(personMap).reduce((s,d)=>s+d.로고,0);
+  const totalGongoImg = Object.values(personMap).reduce((s,d)=>s+d.공고이미지,0);
+
+  c.innerHTML = `<div style="padding:16px 0">
+    <!-- 헤더 -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:500;color:var(--text)">📋 일간 보고</div>
+      <div style="font-size:13px;color:var(--text2)">${todayStr} (${['일','월','화','수','목','금','토'][now.getDay()]})</div>
+      <div style="font-size:11px;padding:2px 8px;border-radius:99px;background:${isAfter18?'#EAF3DE':'#FAEEDA'};color:${isAfter18?'#27500A':'#633806'}">
+        ${isAfter18 ? '✓ 18:00 이후 정산' : `⏳ 정산까지 ${18-now.getHours()}시간`}
+      </div>
+    </div>
+
+    <!-- 전체 요약 -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px">
+      <div style="padding:12px;border-radius:10px;background:var(--bg3);border:0.5px solid var(--border);text-align:center">
+        <div style="font-size:10px;color:var(--text3);margin-bottom:4px">완료 업무</div>
+        <div style="font-size:24px;font-weight:600;color:var(--text)">${totalTasks}<span style="font-size:12px">건</span></div>
+      </div>
+      <div style="padding:12px;border-radius:10px;background:#E6F1FB;border:0.5px solid #185FA533;text-align:center">
+        <div style="font-size:10px;color:#185FA5;margin-bottom:4px">공고</div>
+        <div style="font-size:24px;font-weight:600;color:#185FA5">${totalGongo}<span style="font-size:12px">개</span></div>
+      </div>
+      <div style="padding:12px;border-radius:10px;background:#FAEEDA;border:0.5px solid #BA751733;text-align:center">
+        <div style="font-size:10px;color:#BA7517;margin-bottom:4px">수정</div>
+        <div style="font-size:24px;font-weight:600;color:#BA7517">${totalSujeong}<span style="font-size:12px">개</span></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px">
+      <div style="padding:12px;border-radius:10px;background:#E1F5EE;border:0.5px solid #0F6E5633;text-align:center">
+        <div style="font-size:10px;color:#0F6E56;margin-bottom:4px">공고이미지</div>
+        <div style="font-size:24px;font-weight:600;color:#0F6E56">${totalGongoImg}<span style="font-size:12px">개</span></div>
+      </div>
+      <div style="padding:12px;border-radius:10px;background:#EEEDFE;border:0.5px solid #534AB733;text-align:center">
+        <div style="font-size:10px;color:#534AB7;margin-bottom:4px">외부</div>
+        <div style="font-size:24px;font-weight:600;color:#534AB7">${totalOuter}<span style="font-size:12px">개</span></div>
+      </div>
+      <div style="padding:12px;border-radius:10px;background:#DBEAFE;border:0.5px solid #185FA533;text-align:center">
+        <div style="font-size:10px;color:#185FA5;margin-bottom:4px">배너</div>
+        <div style="font-size:24px;font-weight:600;color:#185FA5">${totalBaner}<span style="font-size:12px">개</span></div>
+      </div>
+      <div style="padding:12px;border-radius:10px;background:#EAF3DE;border:0.5px solid #3B6D1133;text-align:center">
+        <div style="font-size:10px;color:#3B6D11;margin-bottom:4px">로고</div>
+        <div style="font-size:24px;font-weight:600;color:#3B6D11">${totalLogo}<span style="font-size:12px">개</span></div>
+      </div>
+    </div>
+
+    <!-- 담당자별 -->
+    <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:10px;padding-bottom:4px;border-bottom:0.5px solid var(--border)">담당자별 작업량</div>
+    ${sorted.length === 0
+      ? '<div style="font-size:12px;color:var(--text3);padding:12px">오늘 완료된 업무가 없습니다</div>'
+      : sorted.map(([name, data]) => {
+          const isPub = PUB_SET.has(name);
+          const avatarCls = isPub ? 'tl-av-p' : 'tl-av-d';
+          return `<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg);border:0.5px solid var(--border);border-radius:8px;margin-bottom:4px;overflow-x:auto;min-width:0;white-space:nowrap">
+            <span class="tl-avatar ${avatarCls}" style="width:30px;height:30px;font-size:12px;flex-shrink:0">${name[0]}</span>
+            <span style="font-size:13px;font-weight:500;min-width:52px;flex-shrink:0">${name}</span>
+            <span style="font-size:11px;color:var(--text3);flex-shrink:0">${data.tasks}건</span>
+            <div style="display:flex;align-items:center;gap:6px">
+              ${data.공고      ? `<span style="font-size:11px;color:#185FA5;background:#E6F1FB;padding:2px 10px;border-radius:99px;font-weight:500">공고 ${data.공고}</span>` : ''}
+              ${data.공고이미지 ? `<span style="font-size:11px;color:#0F6E56;background:#E1F5EE;padding:2px 10px;border-radius:99px;font-weight:500">공고이미지 ${data.공고이미지}</span>` : ''}
+              ${data.수정      ? `<span style="font-size:11px;color:#BA7517;background:#FAEEDA;padding:2px 10px;border-radius:99px;font-weight:500">수정 ${data.수정}</span>` : ''}
+              ${data.외부      ? `<span style="font-size:11px;color:#534AB7;background:#EEEDFE;padding:2px 10px;border-radius:99px;font-weight:500">외부 ${data.외부}</span>` : ''}
+              ${data.배너      ? `<span style="font-size:11px;color:#185FA5;background:#DBEAFE;padding:2px 10px;border-radius:99px;font-weight:500">배너 ${data.배너}</span>` : ''}
+              ${data.로고      ? `<span style="font-size:11px;color:#3B6D11;background:#EAF3DE;padding:2px 10px;border-radius:99px;font-weight:500">로고 ${data.로고}</span>` : ''}
+              <span style="font-size:12px;color:var(--text);background:var(--bg3);padding:2px 10px;border-radius:99px;font-weight:600">합계 ${data.공고+data.공고이미지+data.수정+data.외부+data.배너+data.로고}</span>
+            </div>
+          </div>`;
+        }).join('')}
+  </div>`;
+}
+
+// ── 주간 라이트 (목~수) ───────────────────────────────────────
+function getThursdayToWednesday(offsetWeeks) {
+  const today = new Date();
+  const dow = today.getDay(); // 0=일, 4=목
+  // 이번주 목요일
+  const diffToThur = dow >= 4 ? dow - 4 : dow + 3;
+  const thisThur = new Date(today);
+  thisThur.setDate(today.getDate() - diffToThur + (offsetWeeks * 7));
+  thisThur.setHours(0,0,0,0);
+  const nextWed = new Date(thisThur);
+  nextWed.setDate(thisThur.getDate() + 6);
+  nextWed.setHours(23,59,59,999);
+  return { start: thisThur, end: nextWed };
+}
+
+function renderWeeklyLite(c, allT) {
+  const { start, end } = getThursdayToWednesday(gongoWeekOffset);
+  const startStr = fmtDateFull(start);
+  const endStr   = fmtDateFull(end);
+
+  const weekTasks = allT.filter(t => {
+    const d = t.closedAt || (t.closed ? t.createdAt?.slice(0,10) : null);
+    if (!d) return false;
+    return d >= startStr && d <= endStr;
+  });
+
+
+
+  const totalTasks = weekTasks.length;
+  const personMap = buildLitePersonMap(weekTasks);
+  const sorted = Object.entries(personMap).sort((a,b) => (b[1].공고+b[1].배너+b[1].로고)-(a[1].공고+a[1].배너+a[1].로고));
+  const totalGongo   = Object.values(personMap).reduce((s,d)=>s+d.공고,0);
+  const totalSujeong = Object.values(personMap).reduce((s,d)=>s+d.수정,0);
+  const totalOuter   = Object.values(personMap).reduce((s,d)=>s+d.외부,0);
+  const totalBaner   = Object.values(personMap).reduce((s,d)=>s+d.배너,0);
+  const totalLogo    = Object.values(personMap).reduce((s,d)=>s+d.로고,0);
+  const totalGongoImg = Object.values(personMap).reduce((s,d)=>s+d.공고이미지,0);
+
+  // 이전 주 빠른 링크 (4주)
+  const prevLinks = Array.from({length:4},(_,i)=>i+1).map(w => {
+    const {start:ps, end:pe} = getThursdayToWednesday(-w);
+    return `<a href="#" onclick="gongoWeekOffset=-${w};render();return false"
+      style="font-size:11px;color:var(--text2);padding:3px 8px;border-radius:4px;border:0.5px solid var(--border);text-decoration:none;background:var(--bg);white-space:nowrap">
+      ${fmtDate(ps)}~${fmtDate(pe)}
+    </a>`;
+  }).join('');
+
+  c.innerHTML = `<div style="padding:16px 0">
+    <!-- 헤더 -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <div style="font-size:16px;font-weight:500;color:var(--text)">📊 주간 보고</div>
+      <div style="font-size:13px;color:var(--text2)">${fmtDate(start)} (목) ~ ${fmtDate(end)} (수)</div>
+      ${gongoWeekOffset < 0
+        ? `<span style="font-size:11px;padding:2px 8px;border-radius:99px;background:#FAEEDA;color:#633806">이전 주</span>`
+        : `<span style="font-size:11px;padding:2px 8px;border-radius:99px;background:#EAF3DE;color:#27500A">이번 주</span>`}
+      <div style="flex:1"></div>
+      <button onclick="gongoWeekOffset=0;render()" style="font-size:11px;padding:3px 10px;border-radius:4px;border:0.5px solid var(--border);background:${gongoWeekOffset===0?'var(--text)':'var(--bg)'};color:${gongoWeekOffset===0?'var(--bg)':'var(--text2)'};cursor:pointer">이번 주</button>
+    </div>
+
+    <!-- 이전 주 링크 -->
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:20px;padding:8px 12px;background:var(--bg3);border-radius:8px;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--text3)">이전 주:</span>
+      ${prevLinks}
+    </div>
+
+    <!-- 전체 요약 -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px">
+      <div style="padding:12px;border-radius:10px;background:var(--bg3);border:0.5px solid var(--border);text-align:center">
+        <div style="font-size:10px;color:var(--text3);margin-bottom:4px">완료 업무</div>
+        <div style="font-size:24px;font-weight:600;color:var(--text)">${totalTasks}<span style="font-size:12px">건</span></div>
+      </div>
+      <div style="padding:12px;border-radius:10px;background:#E6F1FB;border:0.5px solid #185FA533;text-align:center">
+        <div style="font-size:10px;color:#185FA5;margin-bottom:4px">공고</div>
+        <div style="font-size:24px;font-weight:600;color:#185FA5">${totalGongo}<span style="font-size:12px">개</span></div>
+      </div>
+      <div style="padding:12px;border-radius:10px;background:#EEEDFE;border:0.5px solid #534AB733;text-align:center">
+        <div style="font-size:10px;color:#534AB7;margin-bottom:4px">배너</div>
+        <div style="font-size:24px;font-weight:600;color:#534AB7">${totalBaner}<span style="font-size:12px">개</span></div>
+      </div>
+      <div style="padding:12px;border-radius:10px;background:#EAF3DE;border:0.5px solid #3B6D1133;text-align:center">
+        <div style="font-size:10px;color:#3B6D11;margin-bottom:4px">로고</div>
+        <div style="font-size:24px;font-weight:600;color:#3B6D11">${totalLogo}<span style="font-size:12px">개</span></div>
+      </div>
+    </div>
+
+    <!-- 담당자별 -->
+    <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:10px;padding-bottom:4px;border-bottom:0.5px solid var(--border)">담당자별 작업량</div>
+    ${sorted.length === 0
+      ? '<div style="font-size:12px;color:var(--text3);padding:12px">이 주간에 완료된 업무가 없습니다</div>'
+      : sorted.map(([name, data]) => {
+          const isPub = PUB_SET.has(name);
+          const avatarCls = isPub ? 'tl-av-p' : 'tl-av-d';
+          return `<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg);border:0.5px solid var(--border);border-radius:8px;margin-bottom:4px;overflow-x:auto;min-width:0;white-space:nowrap">
+            <span class="tl-avatar ${avatarCls}" style="width:30px;height:30px;font-size:12px;flex-shrink:0">${name[0]}</span>
+            <span style="font-size:13px;font-weight:500;min-width:52px;flex-shrink:0">${name}</span>
+            <span style="font-size:11px;color:var(--text3);flex-shrink:0">${data.tasks}건</span>
+              ${data.공고      ? `<span style="font-size:11px;color:#185FA5;background:#E6F1FB;padding:2px 10px;border-radius:99px;font-weight:500">공고 ${data.공고}</span>` : ''}
+              ${data.공고이미지 ? `<span style="font-size:11px;color:#0F6E56;background:#E1F5EE;padding:2px 10px;border-radius:99px;font-weight:500">공고이미지 ${data.공고이미지}</span>` : ''}
+              ${data.수정      ? `<span style="font-size:11px;color:#BA7517;background:#FAEEDA;padding:2px 10px;border-radius:99px;font-weight:500">수정 ${data.수정}</span>` : ''}
+              ${data.외부      ? `<span style="font-size:11px;color:#534AB7;background:#EEEDFE;padding:2px 10px;border-radius:99px;font-weight:500">외부 ${data.외부}</span>` : ''}
+              ${data.배너      ? `<span style="font-size:11px;color:#185FA5;background:#DBEAFE;padding:2px 10px;border-radius:99px;font-weight:500">배너 ${data.배너}</span>` : ''}
+              ${data.로고      ? `<span style="font-size:11px;color:#3B6D11;background:#EAF3DE;padding:2px 10px;border-radius:99px;font-weight:500">로고 ${data.로고}</span>` : ''}
+              <span style="font-size:12px;color:var(--text);background:var(--bg3);padding:2px 10px;border-radius:99px;font-weight:600">합계 ${data.공고+data.공고이미지+data.수정+data.외부+data.배너+data.로고}</span>
+          </div>`;
+        }).join('')}
+  </div>`;
+}
+
+
+// ── WORKS 고객의소리 보고 ─────────────────────────────────────
+const WORKS_STATS_FROM_DATE = '2026-04-15';
+
+// 제목에서 _N_ 숫자 파싱
+function parseWorksCnt(title) {
+  const m = title.match(/_(\d+)[_\s(]/);
+  return m ? parseInt(m[1]) : null;
+}
+
+// WORKS 업무 유형 파싱
+function parseWorksType(title) {
+  if (title.includes('합불페이지')) return '합불페이지';
+  if (title.includes('메인이미지') || title.includes('서브이미지')) return '메인/서브이미지';
+  return null;
+}
+
+// 목~수 기준 주간 범위 (worksWeekOffset 사용)
+function getWorksWeekRange(offset) {
+  return getThursdayToWednesday(offset);
+}
+
+function setWorksTab(tab, el) {
+  document.querySelectorAll('#works-tabs .nav-tab').forEach(e=>e.classList.remove('active'));
+  if (el) el.classList.add('active');
+  render();
+}
+
+function renderWorksReport(c, allT) {
+  // 숫자 있는 업무만 필터 + 기준일 이후 + 유형 있는 것만
+  const validTasks = allT.filter(t => {
+    const cnt = parseWorksCnt(t.title);
+    const type = parseWorksType(t.title);
+    // updatedAt 우선, 없으면 closedAt, 없으면 createdAt
+    const date = t.updatedAt || t.closedAt || t.createdAt?.slice(0,10);
+    return cnt !== null && type !== null && date >= WORKS_STATS_FROM_DATE;
+  });
+
+  // 주간 범위
+  const { start, end } = getWorksWeekRange(worksWeekOffset);
+  const startStr = fmtDateFull(start);
+  const endStr   = fmtDateFull(end);
+
+  const weekTasks = validTasks.filter(t => {
+    // updatedAt 우선, 없으면 closedAt, 없으면 createdAt
+    const d = t.updatedAt || t.closedAt || t.createdAt?.slice(0,10);
+    return d >= startStr && d <= endStr;
+  });
+
+  // 담당자별 집계
+  const personMap = {};
+  weekTasks.forEach(t => {
+    const cnt  = parseWorksCnt(t.title);
+    const type = parseWorksType(t.title);
+    t.assignees.forEach(a => {
+      if (!personMap[a.name]) personMap[a.name] = {role:a.role, tasks:0, 합불:0, 메인서브:0};
+      personMap[a.name].tasks++;
+      if (type === '합불페이지')    personMap[a.name].합불    += cnt;
+      if (type === '메인/서브이미지') personMap[a.name].메인서브 += cnt;
+    });
+  });
+
+  const sorted = Object.entries(personMap).sort((a,b)=>(b[1].합불+b[1].메인서브)-(a[1].합불+a[1].메인서브));
+  const totalHapbul  = weekTasks.filter(t=>parseWorksType(t.title)==='합불페이지').reduce((s,t)=>s+parseWorksCnt(t.title),0);
+  const totalMainSub = weekTasks.filter(t=>parseWorksType(t.title)==='메인/서브이미지').reduce((s,t)=>s+parseWorksCnt(t.title),0);
+
+  // 이전 주 링크
+  const prevLinks = Array.from({length:4},(_,i)=>i+1).map(w => {
+    const {start:ps, end:pe} = getWorksWeekRange(-w);
+    return `<a href="#" onclick="worksWeekOffset=-${w};render();return false"
+      style="font-size:11px;color:var(--text2);padding:3px 8px;border-radius:4px;border:0.5px solid var(--border);text-decoration:none;background:var(--bg);white-space:nowrap">
+      ${fmtDate(ps)}~${fmtDate(pe)}
+    </a>`;
+  }).join('');
+
+  // 날짜 검색 모드면 해당 범위로 필터
+  let displayTasks = weekTasks;
+  if (worksViewMode === 'date' && worksDateFrom && worksDateTo) {
+    displayTasks = validTasks.filter(t => {
+      const d = t.updatedAt || t.closedAt || t.createdAt?.slice(0,10);
+      return d >= worksDateFrom && d <= worksDateTo;
+    });
+  }
+
+  // 날짜 검색용 집계
+  const dispPersonMap = {};
+  displayTasks.forEach(t => {
+    const cnt  = parseWorksCnt(t.title);
+    const type = parseWorksType(t.title);
+    t.assignees.forEach(a => {
+      if (!dispPersonMap[a.name]) dispPersonMap[a.name] = {role:a.role, tasks:0, 합불:0, 메인서브:0};
+      dispPersonMap[a.name].tasks++;
+      if (type === '합불페이지')     dispPersonMap[a.name].합불    += cnt;
+      if (type === '메인/서브이미지') dispPersonMap[a.name].메인서브 += cnt;
+    });
+  });
+  const dispSorted     = Object.entries(dispPersonMap).sort((a,b)=>(b[1].합불+b[1].메인서브)-(a[1].합불+a[1].메인서브));
+  const dispHapbul     = displayTasks.filter(t=>parseWorksType(t.title)==='합불페이지').reduce((s,t)=>s+parseWorksCnt(t.title),0);
+  const dispMainSub    = displayTasks.filter(t=>parseWorksType(t.title)==='메인/서브이미지').reduce((s,t)=>s+parseWorksCnt(t.title),0);
+
+  c.innerHTML = `<div style="padding:16px 0">
+
+    <!-- 뷰모드 탭 -->
+    <div style="display:flex;gap:0;border-bottom:0.5px solid var(--border);margin-bottom:16px">
+      <div onclick="worksViewMode='week';render()" style="padding:6px 16px;font-size:12px;cursor:pointer;color:${worksViewMode==='week'?'var(--text)':'var(--text2)'};border-bottom:${worksViewMode==='week'?'2px solid var(--text)':'2px solid transparent'};font-weight:${worksViewMode==='week'?'500':'400'}">주간 보기</div>
+      <div onclick="worksViewMode='date';render()" style="padding:6px 16px;font-size:12px;cursor:pointer;color:${worksViewMode==='date'?'var(--text)':'var(--text2)'};border-bottom:${worksViewMode==='date'?'2px solid var(--text)':'2px solid transparent'};font-weight:${worksViewMode==='date'?'500':'400'}">날짜 검색</div>
+    </div>
+
+    ${worksViewMode === 'date' ? `
+    <!-- 날짜 검색 -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;padding:12px;background:var(--bg3);border-radius:8px;flex-wrap:wrap">
+      <span style="font-size:12px;color:var(--text2);flex-shrink:0">기간 검색</span>
+      <input type="date" id="works-from" value="${worksDateFrom}"
+        onchange="worksDateFrom=this.value; worksDateTo=limitWorksDate(this.value); document.getElementById('works-to').value=worksDateTo; render()"
+        style="padding:4px 8px;border-radius:6px;border:0.5px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;outline:none"/>
+      <span style="font-size:12px;color:var(--text3)">~</span>
+      <input type="date" id="works-to" value="${worksDateTo}"
+        onchange="worksDateTo=this.value; render()"
+        style="padding:4px 8px;border-radius:6px;border:0.5px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;outline:none"/>
+      <span style="font-size:10px;color:var(--text3)">(최대 10일)</span>
+      ${worksDateFrom && worksDateTo ? `<span style="font-size:11px;color:var(--text2)">${worksDateFrom.slice(5)} ~ ${worksDateTo.slice(5)} · ${displayTasks.length}건</span>` : ''}
+    </div>` : `
+    <!-- 주간 헤더 -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <div style="font-size:15px;font-weight:500;color:var(--text)">📋 WORKS 제작 보고</div>
+      <div style="font-size:13px;color:var(--text2)">${fmtDate(start)} (목) ~ ${fmtDate(end)} (수)</div>
+      ${worksWeekOffset < 0
+        ? `<span style="font-size:11px;padding:2px 8px;border-radius:99px;background:#FAEEDA;color:#633806">이전 주</span>`
+        : `<span style="font-size:11px;padding:2px 8px;border-radius:99px;background:#EAF3DE;color:#27500A">이번 주</span>`}
+      <div style="flex:1"></div>
+      <button onclick="worksWeekOffset=0;render()" style="font-size:11px;padding:3px 10px;border-radius:4px;border:0.5px solid var(--border);background:${worksWeekOffset===0?'var(--text)':'var(--bg)'};color:${worksWeekOffset===0?'var(--bg)':'var(--text2)'};cursor:pointer">이번 주</button>
+    </div>
+    <!-- 이전 주 링크 -->
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:20px;padding:8px 12px;background:var(--bg3);border-radius:8px;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--text3)">이전 주:</span>
+      ${prevLinks}
+    </div>`}
+
+    <!-- 요약 카드 -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px">
+      <div style="padding:12px;border-radius:10px;background:var(--bg3);border:0.5px solid var(--border);text-align:center">
+        <div style="font-size:10px;color:var(--text3);margin-bottom:4px">완료 업무</div>
+        <div style="font-size:24px;font-weight:600;color:var(--text)">${displayTasks.length}<span style="font-size:12px">건</span></div>
+      </div>
+      <div style="padding:12px;border-radius:10px;background:#E1F5EE;border:0.5px solid #0F6E5633;text-align:center">
+        <div style="font-size:10px;color:#0F6E56;margin-bottom:4px">합불페이지</div>
+        <div style="font-size:24px;font-weight:600;color:#0F6E56">${dispHapbul}<span style="font-size:12px">건</span></div>
+      </div>
+      <div style="padding:12px;border-radius:10px;background:#E6F1FB;border:0.5px solid #185FA533;text-align:center">
+        <div style="font-size:10px;color:#185FA5;margin-bottom:4px">메인/서브이미지</div>
+        <div style="font-size:24px;font-weight:600;color:#185FA5">${dispMainSub}<span style="font-size:12px">건</span></div>
+      </div>
+    </div>
+
+    <!-- 담당자별 -->
+    <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:10px;padding-bottom:4px;border-bottom:0.5px solid var(--border)">담당자별 작업량</div>
+    ${sorted.length === 0
+      ? '<div style="font-size:12px;color:var(--text3);padding:12px">해당 업무가 없습니다</div>'
+      : dispSorted.map(([name, data]) => {
+          const isPub = PUB_SET.has(name);
+          const avatarCls = isPub ? 'tl-av-p' : 'tl-av-d';
+          return `<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg);border:0.5px solid var(--border);border-radius:8px;margin-bottom:4px;overflow-x:auto;white-space:nowrap">
+            <span class="tl-avatar ${avatarCls}" style="width:30px;height:30px;font-size:12px;flex-shrink:0">${name[0]}</span>
+            <span style="font-size:13px;font-weight:500;min-width:52px;flex-shrink:0">${name}</span>
+            <span style="font-size:11px;color:var(--text3);flex-shrink:0">${data.tasks}건</span>
+            ${data.합불    ? `<span style="font-size:11px;color:#0F6E56;background:#E1F5EE;padding:2px 10px;border-radius:99px;font-weight:500;flex-shrink:0">합불 ${data.합불}</span>` : ''}
+            ${data.메인서브 ? `<span style="font-size:11px;color:#185FA5;background:#E6F1FB;padding:2px 10px;border-radius:99px;font-weight:500;flex-shrink:0">메인/서브 ${data.메인서브}</span>` : ''}
+            <span style="font-size:12px;color:var(--text);background:var(--bg3);padding:2px 10px;border-radius:99px;font-weight:600;flex-shrink:0">합계 ${data.합불+data.메인서브}</span>
+          </div>`;
+        }).join('')}
+
+    <!-- 업무 목록 -->
+    <div style="font-size:12px;font-weight:500;color:var(--text);margin-top:20px;margin-bottom:10px;padding-bottom:4px;border-bottom:0.5px solid var(--border)">업무 목록</div>
+    ${weekTasks.length === 0
+      ? '<div style="font-size:12px;color:var(--text3);padding:12px">업무가 없습니다</div>'
+      : displayTasks.sort((a,b)=>a.createdAt>b.createdAt?-1:1).map(t => {
+          const type = parseWorksType(t.title);
+          const cnt  = parseWorksCnt(t.title);
+          const typeColor = type==='합불페이지' ? {c:'#0F6E56',bg:'#E1F5EE'} : {c:'#185FA5',bg:'#E6F1FB'};
+          const d = t.assignees.map(a=>a.name).join(', ');
+          return `<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--bg);border:0.5px solid var(--border);border-radius:7px;margin-bottom:3px;overflow-x:auto;white-space:nowrap">
+            <span style="font-size:10px;padding:2px 8px;border-radius:99px;background:${typeColor.bg};color:${typeColor.c};flex-shrink:0;font-weight:500">${type}</span>
+            <a href="${t.doorayUrl}" target="_blank" style="font-size:11px;font-weight:500;color:var(--text);text-decoration:none;flex:1;min-width:160px;overflow:hidden;text-overflow:ellipsis" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${t.title}</a>
+            <span style="font-size:11px;color:var(--text3);flex-shrink:0">${(t.updatedAt || t.closedAt || t.createdAt?.slice(0,10))?.slice(5,10)}</span>
+            <span style="font-size:11px;font-weight:600;color:${typeColor.c};flex-shrink:0">${cnt}건</span>
+            <span style="font-size:10px;color:var(--text3);flex-shrink:0">${d}</span>
+          </div>`;
+        }).join('')}
+  </div>`;
+}
+
+function calPrev() { calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()-1,1); render(); }
+function calNext() { calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()+1,1); render(); }
+function setTlMode(mode) { tlMode=mode; render(); }
+function setTlDays(v) { tlDays=parseInt(v); render(); }
+
+// ── 초기화 ──────────────────────────────────────────────────
+renderProjTabs();
+if (cfg.token) syncAll();
+else sv('settings', document.querySelectorAll('.nav-tab')[4]);
+
+// 1시간마다 자동 갱신
+setInterval(() => {
+  if (cfg.token) syncAll(true);
+}, 60 * 60 * 1000);
+</script>
+</body>
+</html>
