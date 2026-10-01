@@ -1574,7 +1574,7 @@ function renderDetailPanel(task, bodyContent) {
 
     ${assigneeMdRows.length ? `
     <div class="dsect">
-      <div class="dsect-lbl">담당자별 작업량 <span style="font-size:9px;color:var(--text3)">(본문 @이름: HH:MM~HH:MM 기준)</span></div>
+      <div class="dsect-lbl" style="display:flex;align-items:center">담당자별 작업량 <span style="font-size:9px;color:var(--text3);margin-right:auto">(본문 @이름: HH:MM~HH:MM 기준)</span><button onclick="copyToExcel('gongo')" style="font-size:10px;padding:1px 8px;border-radius:4px;border:0.5px solid #185FA5;background:#E6F1FB;color:#185FA5;cursor:pointer;margin-right:4px">📋 담당자별</button><button onclick="copyToExcel('gongo-list')" style="font-size:10px;padding:1px 8px;border-radius:4px;border:0.5px solid #185FA5;background:#E6F1FB;color:#185FA5;cursor:pointer">📋 목록</button></div>
       <div style="display:flex;flex-direction:column;gap:4px">
         ${assigneeMdRows.map(r=>`
           <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;background:var(--bg3)">
@@ -3186,6 +3186,8 @@ function renderBannerMail(c) {
         : `<span style="font-size:11px;padding:2px 8px;border-radius:99px;background:#EAF3DE;color:#27500A">이번 주</span>`}
       <div style="flex:1"></div>
       <button onclick="bannerWeekOffset=0;render()" style="font-size:11px;padding:3px 10px;border-radius:4px;border:0.5px solid var(--border);background:${bannerWeekOffset===0?'var(--text)':'var(--bg)'};color:${bannerWeekOffset===0?'var(--bg)':'var(--text2)'};cursor:pointer">이번 주</button>
+
+      <button onclick="copyBannerMailAll()" style="font-size:11px;padding:3px 12px;border-radius:4px;border:none;background:#3B6D11;color:#fff;cursor:pointer;font-weight:500">📋 엑셀 복사</button>
       <button id="btn-record-history" onclick="recordBannerMailHistory()" style="font-size:11px;padding:3px 12px;border-radius:4px;border:none;background:#0F6E56;color:#fff;cursor:pointer;font-weight:500">📝 배너/메일 기록</button>
     </div>
 
@@ -3222,6 +3224,8 @@ function renderBannerMail(c) {
       <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:10px;padding:6px 12px;background:#E6F1FB;border-radius:6px;display:flex;align-items:center;gap:8px">
         🖼 배너 작업
         <span style="font-size:11px;color:#185FA5">${weekBanner.length}건 · ${totalBanner}개</span>
+        <button onclick="copyToExcel('banner')" style="font-size:10px;padding:1px 8px;border-radius:4px;border:0.5px solid #185FA5;background:#E6F1FB;color:#185FA5;cursor:pointer;margin-left:auto">📋 담당자별</button>
+        <button onclick="copyToExcel('banner-list')" style="font-size:10px;padding:1px 8px;border-radius:4px;border:0.5px solid #185FA5;background:#E6F1FB;color:#185FA5;cursor:pointer">📋 목록</button>
       </div>
       ${bannerSorted.length === 0
         ? '<div style="font-size:12px;color:var(--text3);padding:8px 12px">이 주간에 배너 업무가 없습니다</div>'
@@ -3236,6 +3240,8 @@ function renderBannerMail(c) {
       <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:10px;padding:6px 12px;background:#EEEDFE;border-radius:6px;display:flex;align-items:center;gap:8px">
         ✉️ 메일링 작업
         <span style="font-size:11px;color:#534AB7">${weekMail.length}건 · 이미지 ${totalImg} / HTML ${totalHtml}</span>
+        <button onclick="copyToExcel('mail')" style="font-size:10px;padding:1px 8px;border-radius:4px;border:0.5px solid #534AB7;background:#EEEDFE;color:#534AB7;cursor:pointer;margin-left:auto">📋 담당자별</button>
+        <button onclick="copyToExcel('mail-list')" style="font-size:10px;padding:1px 8px;border-radius:4px;border:0.5px solid #534AB7;background:#EEEDFE;color:#534AB7;cursor:pointer">📋 목록</button>
       </div>
       ${mailSorted.length === 0
         ? '<div style="font-size:12px;color:var(--text3);padding:8px 12px">이 주간에 메일 업무가 없습니다</div>'
@@ -3400,6 +3406,8 @@ function renderBannerMail(c) {
     +'<div style="font-size:11px;color:var(--text3)">8/27 이후 · 완료 기준</div>'
     +'<div style="flex:1"></div>'
     +weekBtn(0,'이번 주')
+    +'<button onclick="copyBannerMailAll()" style="font-size:11px;padding:3px 12px;border-radius:4px;border:none;background:#3B6D11;color:#fff;cursor:pointer;font-weight:500">📋 엑셀 복사</button>'
+    +'<button onclick="recordBannerMailHistory()" style="font-size:11px;padding:3px 12px;border-radius:4px;border:none;background:#0F6E56;color:#fff;cursor:pointer;font-weight:500">📝 배너/메일 기록</button>'
     +'</div>'
 
     // 운영 안내
@@ -3462,7 +3470,7 @@ function renderBannerMail(c) {
 
     // 스마트캠리 섹션
     +'<div>'
-    +'<div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:10px;padding:6px 12px;background:#FFF3CD;border-radius:6px">📸 스마트캠리 작업 <span style="font-size:11px;color:#533F0E">'+weekSmart.length+'건</span></div>'
+    +'<div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:10px;padding:6px 12px;background:#FFF3CD;border-radius:6px">📸 스마트캠리 작업 <span style="font-size:11px;color:#533F0E;margin-right:auto">'+weekSmart.length+'건</span><button onclick="copyToExcel(\'smart\')" style="font-size:10px;padding:1px 8px;border-radius:4px;border:0.5px solid #BA7517;background:#FFF3CD;color:#533F0E;cursor:pointer;margin-right:4px">📋 담당자별</button><button onclick="copyToExcel(\'smart-list\')" style="font-size:10px;padding:1px 8px;border-radius:4px;border:0.5px solid #BA7517;background:#FFF3CD;color:#533F0E;cursor:pointer">📋 목록</button></div>'
     +(weekSmart.length===0
       ? '<div style="font-size:12px;color:var(--text3);padding:8px">이 주간에 스마트캠리 업무가 없습니다</div>'
       : weekSmart.sort((a,b)=>b.closedAt>a.closedAt?-1:1).map(t => {
@@ -3911,6 +3919,205 @@ async function recordBannerMailHistory() {
   if (btn) { btn.disabled = false; btn.textContent = '📝 배너/메일 기록'; }
 }
 
+
+
+// ── 엑셀 복사 함수 ──────────────────────────────────────────
+function copyToExcel(type) {
+  const { start, end } = getThursdayToWednesday(gongoWeekOffset);
+  const startStr = fmtDateFull(start);
+  const endStr   = fmtDateFull(end);
+  const weekLabel = fmtDate(start)+'(목) ~ '+fmtDate(end)+'(수)';
+  let text = '주간\t'+weekLabel+'\n';
+
+  if (type === 'gongo') {
+    if (!lastWeeklyReportData) { alert('주간 보고 탭을 먼저 열어주세요'); return; }
+    const { weekTasks, personMap } = lastWeeklyReportData;
+    const sorted = Object.entries(personMap).sort((a,b)=>(b[1].공고+b[1].공고이미지+b[1].수정+b[1].외부+(b[1].RPO합불||0))-(a[1].공고+a[1].공고이미지+a[1].수정+a[1].외부+(a[1].RPO합불||0)));
+    text += '담당자\t업무\t공고\t공고이미지\t수정\t외부\tRPO합불\t합계\n';
+    sorted.forEach(function(item) {
+      var n=item[0], d=item[1];
+      var total=d.공고+d.공고이미지+d.수정+d.외부+d.배너+d.로고+(d.RPO합불||0);
+      text += n+'\t'+d.tasks+'건\t'+(d.공고||0)+'\t'+(d.공고이미지||0)+'\t'+(d.수정||0)+'\t'+(d.외부||0)+'\t'+(d.RPO합불||0)+'\t'+total+'\n';
+    });
+    text += '합계\t'+weekTasks.length+'건\t'+sorted.reduce((s,x)=>s+x[1].공고,0)+'\t'+sorted.reduce((s,x)=>s+x[1].공고이미지,0)+'\t'+sorted.reduce((s,x)=>s+x[1].수정,0)+'\n';
+
+  } else if (type === 'gongo-list') {
+    const allT2 = allTasks[GONGO_PROJECT_ID]||[];
+    const gongoT = allT2.filter(t=>{const d=t.closedAt||(t.closed?t.createdAt?.slice(0,10):null);return d&&d>=startStr&&d<=endStr;});
+    text += '날짜\t업무명\t담당자\t공고수\t구분\n';
+    gongoT.sort((a,b)=>(b.closedAt||b.createdAt||'')>(a.closedAt||a.createdAt||'')?-1:1).forEach(function(t) {
+      var tp=t.classify?.수정?'수정':t.classify?.외부?'외부':t.tagIds?.includes(RPO_HAPBUL_TAG)?'RPO합불':'공고';
+      text += (t.closedAt||t.createdAt||'').slice(5,10)+'\t'+t.title+'\t'+t.assignees.map(a=>a.name).join(', ')+'\t'+(t.itemCounts?.공고||0)+'\t'+tp+'\n';
+    });
+
+  } else if (type === 'banner') {
+    const designT = allTasks[DESIGN_PROJECT_ID]||[];
+    const bannerT = designT.filter(t=>{const isBanner=t.title.includes('[배너요청]')||t.title.includes('[배너요청(수정)]')||t.tagIds?.includes('4418269262785789521');const d=t.closedAt||t.updatedAt;return isBanner&&t.closed&&d>=startStr&&d<=endStr;});
+    const bMap={};bannerT.forEach(t=>{const c=parseBannerCnt(t.title)||0;t.assignees.forEach(a=>{bMap[a.name]=(bMap[a.name]||0)+c;});});
+    text += '담당자\t배너 제작\n';
+    Object.entries(bMap).sort((a,b)=>b[1]-a[1]).forEach(function(item){text+=item[0]+'\t'+item[1]+'\n';});
+    text += '합계\t'+Object.values(bMap).reduce((s,v)=>s+v,0)+'\n';
+
+  } else if (type === 'banner-list') {
+    const designT = allTasks[DESIGN_PROJECT_ID]||[];
+    const bannerT = designT.filter(t=>{const isBanner=t.title.includes('[배너요청]')||t.title.includes('[배너요청(수정)]')||t.tagIds?.includes('4418269262785789521');const d=t.closedAt||t.updatedAt;return isBanner&&t.closed&&d>=startStr&&d<=endStr;});
+    text += '날짜\t업무명\t담당자\t배너수\n';
+    bannerT.sort((a,b)=>(b.closedAt||b.updatedAt||'')>(a.closedAt||a.updatedAt||'')?-1:1).forEach(function(t){
+      text += (t.closedAt||t.updatedAt||'').slice(5,10)+'\t'+t.title+'\t'+t.assignees.map(a=>a.name).join(', ')+'\t'+(parseBannerCnt(t.title)||0)+'\n';
+    });
+
+  } else if (type === 'mail') {
+    const designT = allTasks[DESIGN_PROJECT_ID]||[];
+    const mailT = designT.filter(t=>{const isMail=t.title.includes('[메일링]')||t.title.includes('[공지사항/메일링]');const d=t.closedAt||t.updatedAt;return isMail&&parseMailCnt(t.title)&&t.closed&&d>=startStr&&d<=endStr;});
+    const mMap={};mailT.forEach(t=>{const cnt=parseMailCnt(t.title);const isMulti=t.assignees.length>=2;t.assignees.forEach(a=>{if(!mMap[a.name])mMap[a.name]={img:0,html:0};if(isMulti&&PUB_SET.has(a.name))mMap[a.name].html+=cnt?.html||0;else if(isMulti)mMap[a.name].img+=cnt?.img||0;else{mMap[a.name].img+=cnt?.img||0;mMap[a.name].html+=cnt?.html||0;}});});
+    text += '담당자\t이미지\tHTML\t합계\n';
+    Object.entries(mMap).sort((a,b)=>(b[1].img+b[1].html)-(a[1].img+a[1].html)).forEach(function(item){var n=item[0],d=item[1];text+=n+'\t'+d.img+'\t'+d.html+'\t'+(d.img+d.html)+'\n';});
+    text += '합계\t'+Object.values(mMap).reduce((s,d)=>s+d.img,0)+'\t'+Object.values(mMap).reduce((s,d)=>s+d.html,0)+'\t'+Object.values(mMap).reduce((s,d)=>s+d.img+d.html,0)+'\n';
+
+  } else if (type === 'mail-list') {
+    const designT = allTasks[DESIGN_PROJECT_ID]||[];
+    const mailT = designT.filter(t=>{const isMail=t.title.includes('[메일링]')||t.title.includes('[공지사항/메일링]');const d=t.closedAt||t.updatedAt;return isMail&&parseMailCnt(t.title)&&t.closed&&d>=startStr&&d<=endStr;});
+    text += '날짜\t업무명\t담당자\t이미지\tHTML\n';
+    mailT.sort((a,b)=>(b.closedAt||b.updatedAt||'')>(a.closedAt||a.updatedAt||'')?-1:1).forEach(function(t){
+      var cnt=parseMailCnt(t.title);
+      text += (t.closedAt||t.updatedAt||'').slice(5,10)+'\t'+t.title+'\t'+t.assignees.map(a=>a.name).join(', ')+'\t'+(cnt?.img||0)+'\t'+(cnt?.html||0)+'\n';
+    });
+
+  } else if (type === 'smart') {
+    const designT = allTasks[DESIGN_PROJECT_ID]||[];
+    const smartT = designT.filter(t=>{const isSmart=t.title.includes('[스마트캠리 요청]')||t.title.includes('[스마트캠리요청]');const d=t.closedAt||t.updatedAt;return isSmart&&t.closed&&d>=startStr&&d<=endStr;});
+    const sMap={};smartT.forEach(t=>t.assignees.forEach(a=>{sMap[a.name]=(sMap[a.name]||0)+1;}));
+    text += '담당자\t건수\n';
+    Object.entries(sMap).sort((a,b)=>b[1]-a[1]).forEach(function(item){text+=item[0]+'\t'+item[1]+'\n';});
+    text += '합계\t'+Object.values(sMap).reduce((s,v)=>s+v,0)+'\n';
+
+  } else if (type === 'smart-list') {
+    const designT = allTasks[DESIGN_PROJECT_ID]||[];
+    const smartT = designT.filter(t=>{const isSmart=t.title.includes('[스마트캠리 요청]')||t.title.includes('[스마트캠리요청]');const d=t.closedAt||t.updatedAt;return isSmart&&t.closed&&d>=startStr&&d<=endStr;});
+    text += '날짜\t업무명\t담당자\n';
+    smartT.sort((a,b)=>(b.closedAt||b.updatedAt||'')>(a.closedAt||a.updatedAt||'')?-1:1).forEach(function(t){
+      text += (t.closedAt||t.updatedAt||'').slice(5,10)+'\t'+t.title+'\t'+t.assignees.map(a=>a.name).join(', ')+'\n';
+    });
+  }
+
+  navigator.clipboard.writeText(text).then(function(){
+    alert('클립보드에 복사됐어요!\n엑셀에서 Ctrl+V로 붙여넣기 하세요.');
+  }).catch(function(){
+    var el=document.createElement('textarea');
+    el.value=text;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    alert('클립보드에 복사됐어요!\n엑셀에서 Ctrl+V로 붙여넣기 하세요.');
+  });
+}
+
+
+// ── 배너/메일/스마트캠리 전체 엑셀 복사 ────────────────────────
+function copyBannerMailAll() {
+  const { start, end } = getThursdayToWednesday(bannerWeekOffset);
+  const startStr  = fmtDateFull(start);
+  const endStr    = fmtDateFull(end);
+  const weekLabel = fmtDate(start)+'(목) ~ '+fmtDate(end)+'(수)';
+  const allT = allTasks[DESIGN_PROJECT_ID] || [];
+
+  // 배너
+  const bannerT = allT.filter(t => {
+    const isBanner = t.title.includes('[배너요청]') || t.title.includes('[배너요청(수정)]') || t.tagIds?.includes('4418269262785789521');
+    const d = t.closedAt || t.updatedAt;
+    return isBanner && t.closed && d >= startStr && d <= endStr;
+  });
+  // 메일
+  const mailT = allT.filter(t => {
+    const isMail = t.title.includes('[메일링]') || t.title.includes('[공지사항/메일링]');
+    const d = t.closedAt || t.updatedAt;
+    return isMail && parseMailCnt(t.title) && t.closed && d >= startStr && d <= endStr;
+  });
+  // 스마트캠리
+  const smartT = allT.filter(t => {
+    const isSmart = t.title.includes('[스마트캠리 요청]') || t.title.includes('[스마트캠리요청]');
+    const d = t.closedAt || t.updatedAt;
+    return isSmart && t.closed && d >= startStr && d <= endStr;
+  });
+
+  // 담당자별 집계
+  const bMap={}, mMap={}, sMap={};
+  bannerT.forEach(t=>{const c=parseBannerCnt(t.title)||0;t.assignees.forEach(a=>{bMap[a.name]=(bMap[a.name]||0)+c;});});
+  mailT.forEach(t=>{
+    const cnt=parseMailCnt(t.title)||{img:0,html:0};
+    const isMulti=t.assignees.length>=2;
+    t.assignees.forEach(a=>{
+      if(!mMap[a.name])mMap[a.name]={img:0,html:0};
+      if(isMulti&&PUB_SET.has(a.name))mMap[a.name].html+=cnt.html;
+      else if(isMulti)mMap[a.name].img+=cnt.img;
+      else{mMap[a.name].img+=cnt.img;mMap[a.name].html+=cnt.html;}
+    });
+  });
+  smartT.forEach(t=>t.assignees.forEach(a=>{sMap[a.name]=(sMap[a.name]||0)+1;}));
+
+  const totalBanner = bannerT.reduce((s,t)=>s+(parseBannerCnt(t.title)||0),0);
+  const totalImg    = mailT.reduce((s,t)=>s+(parseMailCnt(t.title)?.img||0),0);
+  const totalHtml   = mailT.reduce((s,t)=>s+(parseMailCnt(t.title)?.html||0),0);
+
+  let text = '주간\t' + weekLabel + '\n\n';
+
+  // 배너 담당자별
+  text += '🎨 배너\n';
+  text += '업무\t' + bannerT.length + '건\t배너 제작\t' + totalBanner + '개\n';
+  text += '담당자\t배너 제작\n';
+  Object.entries(bMap).sort((a,b)=>b[1]-a[1]).forEach(([n,c])=>{ text += n+'\t'+c+'개\n'; });
+  text += '\n';
+
+  // 배너 목록
+  text += '날짜\t업무명\t담당자\t배너수\n';
+  bannerT.sort((a,b)=>(b.closedAt||b.updatedAt||'')>(a.closedAt||a.updatedAt||'')?-1:1).forEach(t=>{
+    text += (t.closedAt||t.updatedAt||'').slice(5,10)+'\t'+t.title+'\t'+t.assignees.map(a=>a.name).join(', ')+'\t'+(parseBannerCnt(t.title)||0)+'\n';
+  });
+  text += '\n';
+
+  // 메일 담당자별
+  text += '✉️ 메일링\n';
+  text += '업무\t' + mailT.length + '건\t이미지\t' + totalImg + '개\tHTML\t' + totalHtml + '개\n';
+  text += '담당자\t이미지\tHTML\t합계\n';
+  Object.entries(mMap).sort((a,b)=>(b[1].img+b[1].html)-(a[1].img+a[1].html)).forEach(([n,d])=>{
+    text += n+'\t'+d.img+'개\t'+d.html+'개\t'+(d.img+d.html)+'개\n';
+  });
+  text += '\n';
+
+  // 메일 목록
+  text += '날짜\t업무명\t담당자\t이미지\tHTML\n';
+  mailT.sort((a,b)=>(b.closedAt||b.updatedAt||'')>(a.closedAt||a.updatedAt||'')?-1:1).forEach(t=>{
+    const cnt=parseMailCnt(t.title)||{img:0,html:0};
+    text += (t.closedAt||t.updatedAt||'').slice(5,10)+'\t'+t.title+'\t'+t.assignees.map(a=>a.name).join(', ')+'\t'+cnt.img+'\t'+cnt.html+'\n';
+  });
+  text += '\n';
+
+  // 스마트캠리
+  if (smartT.length) {
+    text += '📸 스마트캠리\n';
+    text += '업무\t' + smartT.length + '건\n';
+    text += '담당자\t건수\n';
+    Object.entries(sMap).sort((a,b)=>b[1]-a[1]).forEach(([n,c])=>{ text += n+'\t'+c+'건\n'; });
+    text += '\n';
+    text += '날짜\t업무명\t담당자\n';
+    smartT.sort((a,b)=>(b.closedAt||b.updatedAt||'')>(a.closedAt||a.updatedAt||'')?-1:1).forEach(t=>{
+      text += (t.closedAt||t.updatedAt||'').slice(5,10)+'\t'+t.title+'\t'+t.assignees.map(a=>a.name).join(', ')+'\n';
+    });
+  }
+
+  navigator.clipboard.writeText(text).then(function(){
+    alert('클립보드에 복사됐어요!\n엑셀에서 Ctrl+V로 붙여넣기 하세요.');
+  }).catch(function(){
+    var el=document.createElement('textarea');
+    el.value=text;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    alert('클립보드에 복사됐어요!\n엑셀에서 Ctrl+V로 붙여넣기 하세요.');
+  });
+}
 
 function calPrev() { calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()-1,1); render(); }
 function calNext() { calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()+1,1); render(); }
