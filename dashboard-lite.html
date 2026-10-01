@@ -4070,9 +4070,9 @@ function copyBannerMailAll() {
   text += '\n';
 
   // 배너 목록
-  text += '날짜\t업무명\t담당자\t배너수\n';
+  text += '날짜\t업무명\t담당자\t배너수\t링크\n';
   bannerT.sort((a,b)=>(b.closedAt||b.updatedAt||'')>(a.closedAt||a.updatedAt||'')?-1:1).forEach(t=>{
-    text += (t.closedAt||t.updatedAt||'').slice(5,10)+'\t'+t.title+'\t'+t.assignees.map(a=>a.name).join(', ')+'\t'+(parseBannerCnt(t.title)||0)+'\n';
+    text += (t.closedAt||t.updatedAt||'').slice(5,10)+'\t'+t.title+'\t'+t.assignees.map(a=>a.name).join(', ')+'\t'+(parseBannerCnt(t.title)||0)+'\t'+(t.doorayUrl||'')+'\n';
   });
   text += '\n';
 
@@ -4086,10 +4086,10 @@ function copyBannerMailAll() {
   text += '\n';
 
   // 메일 목록
-  text += '날짜\t업무명\t담당자\t이미지\tHTML\n';
+  text += '날짜\t업무명\t담당자\t이미지\tHTML\t링크\n';
   mailT.sort((a,b)=>(b.closedAt||b.updatedAt||'')>(a.closedAt||a.updatedAt||'')?-1:1).forEach(t=>{
     const cnt=parseMailCnt(t.title)||{img:0,html:0};
-    text += (t.closedAt||t.updatedAt||'').slice(5,10)+'\t'+t.title+'\t'+t.assignees.map(a=>a.name).join(', ')+'\t'+cnt.img+'\t'+cnt.html+'\n';
+    text += (t.closedAt||t.updatedAt||'').slice(5,10)+'\t'+t.title+'\t'+t.assignees.map(a=>a.name).join(', ')+'\t'+cnt.img+'\t'+cnt.html+'\t'+(t.doorayUrl||'')+'\n';
   });
   text += '\n';
 
@@ -4100,9 +4100,9 @@ function copyBannerMailAll() {
     text += '담당자\t건수\n';
     Object.entries(sMap).sort((a,b)=>b[1]-a[1]).forEach(([n,c])=>{ text += n+'\t'+c+'건\n'; });
     text += '\n';
-    text += '날짜\t업무명\t담당자\n';
+    text += '날짜\t업무명\t담당자\t링크\n';
     smartT.sort((a,b)=>(b.closedAt||b.updatedAt||'')>(a.closedAt||a.updatedAt||'')?-1:1).forEach(t=>{
-      text += (t.closedAt||t.updatedAt||'').slice(5,10)+'\t'+t.title+'\t'+t.assignees.map(a=>a.name).join(', ')+'\n';
+      text += (t.closedAt||t.updatedAt||'').slice(5,10)+'\t'+t.title+'\t'+t.assignees.map(a=>a.name).join(', ')+'\t'+(t.doorayUrl||'')+'\n';
     });
   }
 
