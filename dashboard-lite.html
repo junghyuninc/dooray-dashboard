@@ -645,7 +645,13 @@ async function syncAll(silent) {
   const now = new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
   setBadge('ok', `연결됨 · ${total}건 · ${now}`);
   renderProjTabs();
-  render();
+  if (typeof lite2Mode !== 'undefined' && lite2Mode) {
+    document.getElementById('nav-tabs').style.display = 'none';
+    document.getElementById('lite2-tabs').style.display = 'flex';
+    selectLite2Tab(lite2Tab, null);
+  } else {
+    render();
+  }
   checkOldActiveTasks();
   // 백그라운드 본문 조회
   // 본문 자동 조회 비활성화 (429 방지)
