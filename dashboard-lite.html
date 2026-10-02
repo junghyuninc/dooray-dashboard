@@ -199,6 +199,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   flex-shrink: 0;
 }
 </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 <div class="app">
@@ -1580,7 +1581,7 @@ function renderDetailPanel(task, bodyContent) {
 
     ${assigneeMdRows.length ? `
     <div class="dsect">
-      <div class="dsect-lbl" style="display:flex;align-items:center">담당자별 작업량 <span style="font-size:9px;color:var(--text3);margin-right:auto">(본문 @이름: HH:MM~HH:MM 기준)</span><button onclick="copyToExcel('gongo')" style="font-size:10px;padding:1px 8px;border-radius:4px;border:0.5px solid #185FA5;background:#E6F1FB;color:#185FA5;cursor:pointer;margin-right:4px">📋 담당자별</button><button onclick="copyToExcel('gongo-list')" style="font-size:10px;padding:1px 8px;border-radius:4px;border:0.5px solid #185FA5;background:#E6F1FB;color:#185FA5;cursor:pointer">📋 목록</button></div>
+      <div class="dsect-lbl" style="display:flex;align-items:center;gap:4px">담당자별 작업량 <span style="font-size:9px;color:var(--text3);margin-right:auto">(본문 @이름: HH:MM~HH:MM 기준)</span><button onclick="copyGongoAsHtml()" style="font-size:10px;padding:1px 8px;border-radius:4px;border:none;background:#534AB7;color:#fff;cursor:pointer">📋 서식 복사</button><button onclick="copyToExcel('gongo')" style="font-size:10px;padding:1px 8px;border-radius:4px;border:0.5px solid #185FA5;background:#E6F1FB;color:#185FA5;cursor:pointer">📋 텍스트</button><button onclick="copyToExcel('gongo-list')" style="font-size:10px;padding:1px 8px;border-radius:4px;border:0.5px solid #185FA5;background:#E6F1FB;color:#185FA5;cursor:pointer">📋 목록</button><button onclick="saveGongoImage()" style="font-size:10px;padding:1px 8px;border-radius:4px;border:none;background:#185FA5;color:#fff;cursor:pointer">📸 이미지</button></div>
       <div style="display:flex;flex-direction:column;gap:4px">
         ${assigneeMdRows.map(r=>`
           <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;background:var(--bg3)">
@@ -2725,7 +2726,7 @@ function renderDailyLite(c, allT) {
     </div>
 
     <!-- 담당자별 -->
-    <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:10px;padding-bottom:4px;border-bottom:0.5px solid var(--border)">담당자별 작업량</div>
+    <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:10px;padding-bottom:4px;border-bottom:0.5px solid var(--border);display:flex;align-items:center">담당자별 작업량<span style="margin-left:auto;display:flex;gap:4px"><button onclick="copyGongoAsHtml()" style="font-size:10px;padding:2px 8px;border-radius:4px;border:none;background:#534AB7;color:#fff;cursor:pointer">📋 서식 복사</button><button onclick="copyToExcel('gongo')" style="font-size:10px;padding:2px 8px;border-radius:4px;border:0.5px solid #185FA5;background:#E6F1FB;color:#185FA5;cursor:pointer">📋 텍스트</button><button onclick="copyToExcel('gongo-list')" style="font-size:10px;padding:2px 8px;border-radius:4px;border:0.5px solid #185FA5;background:#E6F1FB;color:#185FA5;cursor:pointer">📋 목록</button><button onclick="saveGongoImage()" style="font-size:10px;padding:2px 8px;border-radius:4px;border:none;background:#185FA5;color:#fff;cursor:pointer">📸 이미지</button></span></div>
     ${sorted.length === 0
       ? '<div style="font-size:12px;color:var(--text3);padding:12px">오늘 완료된 업무가 없습니다</div>'
       : sorted.map(([name, data]) => {
@@ -2841,7 +2842,7 @@ function renderWeeklyLite(c, allT) {
     </div>
 
     <!-- 담당자별 -->
-    <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:10px;padding-bottom:4px;border-bottom:0.5px solid var(--border)">담당자별 작업량</div>
+    <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:10px;padding-bottom:4px;border-bottom:0.5px solid var(--border);display:flex;align-items:center">담당자별 작업량<span style="margin-left:auto;display:flex;gap:4px"><button onclick="copyGongoAsHtml()" style="font-size:10px;padding:2px 8px;border-radius:4px;border:none;background:#534AB7;color:#fff;cursor:pointer">📋 서식 복사</button><button onclick="copyToExcel('gongo')" style="font-size:10px;padding:2px 8px;border-radius:4px;border:0.5px solid #185FA5;background:#E6F1FB;color:#185FA5;cursor:pointer">📋 텍스트</button><button onclick="copyToExcel('gongo-list')" style="font-size:10px;padding:2px 8px;border-radius:4px;border:0.5px solid #185FA5;background:#E6F1FB;color:#185FA5;cursor:pointer">📋 목록</button><button onclick="saveGongoImage()" style="font-size:10px;padding:2px 8px;border-radius:4px;border:none;background:#185FA5;color:#fff;cursor:pointer">📸 이미지</button></span></div>
     ${sorted.length === 0
       ? '<div style="font-size:12px;color:var(--text3);padding:12px">이 주간에 완료된 업무가 없습니다</div>'
       : sorted.map(([name, data]) => {
@@ -3412,7 +3413,9 @@ function renderBannerMail(c) {
     +'<div style="font-size:11px;color:var(--text3)">8/27 이후 · 완료 기준</div>'
     +'<div style="flex:1"></div>'
     +weekBtn(0,'이번 주')
-    +'<button onclick="copyBannerMailAll()" style="font-size:11px;padding:3px 12px;border-radius:4px;border:none;background:#3B6D11;color:#fff;cursor:pointer;font-weight:500">📋 엑셀 복사</button>'
+    +'<button onclick="copyAsHtml()" style="font-size:11px;padding:3px 12px;border-radius:4px;border:none;background:#534AB7;color:#fff;cursor:pointer;font-weight:500">📋 서식 복사</button>'
+    +'<button onclick="copyBannerMailAll()" style="font-size:11px;padding:3px 12px;border-radius:4px;border:none;background:#3B6D11;color:#fff;cursor:pointer;font-weight:500">📋 텍스트 복사</button>'
+    +'<button onclick="saveAsImage()" style="font-size:11px;padding:3px 12px;border-radius:4px;border:none;background:#185FA5;color:#fff;cursor:pointer;font-weight:500">📸 이미지 저장</button>'
     +'<button onclick="recordBannerMailHistory()" style="font-size:11px;padding:3px 12px;border-radius:4px;border:none;background:#0F6E56;color:#fff;cursor:pointer;font-weight:500">📝 배너/메일 기록</button>'
     +'</div>'
 
@@ -4122,6 +4125,299 @@ function copyBannerMailAll() {
     document.execCommand('copy');
     document.body.removeChild(el);
     alert('클립보드에 복사됐어요!\n엑셀에서 Ctrl+V로 붙여넣기 하세요.');
+  });
+}
+
+
+// ── 이미지 저장 ──────────────────────────────────────────────
+function saveAsImage() {
+  const el = document.getElementById('main');
+  const btn = event.target;
+  btn.textContent = '저장 중...';
+  btn.disabled = true;
+
+  const { start, end } = getThursdayToWednesday(bannerWeekOffset);
+  const weekLabel = fmtDate(start)+'_'+fmtDate(end);
+
+  html2canvas(el, {
+    backgroundColor: getComputedStyle(document.body).getPropertyValue('--bg') || '#ffffff',
+    scale: 2,
+    useCORS: true,
+    allowTaint: true
+  }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = '배너메일집계_'+weekLabel.replace(/\//g,'-')+'.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    btn.textContent = '📸 이미지 저장';
+    btn.disabled = false;
+  }).catch(e => {
+    alert('이미지 저장 실패: '+e.message);
+    btn.textContent = '📸 이미지 저장';
+    btn.disabled = false;
+  });
+}
+
+// ── 서식 있는 HTML 복사 (엑셀 붙여넣기용) ────────────────────
+function copyAsHtml() {
+  const { start, end } = getThursdayToWednesday(bannerWeekOffset);
+  const startStr  = fmtDateFull(start);
+  const endStr    = fmtDateFull(end);
+  const weekLabel = fmtDate(start)+'(목) ~ '+fmtDate(end)+'(수)';
+  const allT = allTasks[DESIGN_PROJECT_ID] || [];
+
+  const bannerT = allT.filter(t => {
+    const isBanner = t.title.includes('[배너요청]') || t.title.includes('[배너요청(수정)]') || t.tagIds?.includes('4418269262785789521');
+    const d = t.closedAt || t.updatedAt;
+    return isBanner && t.closed && d >= startStr && d <= endStr;
+  });
+  const mailT = allT.filter(t => {
+    const isMail = t.title.includes('[메일링]') || t.title.includes('[공지사항/메일링]');
+    const d = t.closedAt || t.updatedAt;
+    return isMail && parseMailCnt(t.title) && t.closed && d >= startStr && d <= endStr;
+  });
+  const smartT = allT.filter(t => {
+    const isSmart = t.title.includes('[스마트캠리 요청]') || t.title.includes('[스마트캠리요청]');
+    const d = t.closedAt || t.updatedAt;
+    return isSmart && t.closed && d >= startStr && d <= endStr;
+  });
+
+  const bMap={}, mMap={}, sMap={};
+  bannerT.forEach(t=>{const c=parseBannerCnt(t.title)||0;t.assignees.forEach(a=>{bMap[a.name]=(bMap[a.name]||0)+c;});});
+  mailT.forEach(t=>{
+    const cnt=parseMailCnt(t.title)||{img:0,html:0};
+    const isMulti=t.assignees.length>=2;
+    t.assignees.forEach(a=>{
+      if(!mMap[a.name])mMap[a.name]={img:0,html:0};
+      if(isMulti&&PUB_SET.has(a.name))mMap[a.name].html+=cnt.html;
+      else if(isMulti)mMap[a.name].img+=cnt.img;
+      else{mMap[a.name].img+=cnt.img;mMap[a.name].html+=cnt.html;}
+    });
+  });
+  smartT.forEach(t=>t.assignees.forEach(a=>{sMap[a.name]=(sMap[a.name]||0)+1;}));
+
+  const totalBanner = bannerT.reduce((s,t)=>s+(parseBannerCnt(t.title)||0),0);
+  const totalImg    = mailT.reduce((s,t)=>s+(parseMailCnt(t.title)?.img||0),0);
+  const totalHtml   = mailT.reduce((s,t)=>s+(parseMailCnt(t.title)?.html||0),0);
+
+  const th = 'style="background:#f0f0f0;padding:6px 12px;border:1px solid #ddd;font-weight:600;text-align:center"';
+  const td = 'style="padding:6px 12px;border:1px solid #ddd;text-align:center"';
+  const tdl = 'style="padding:6px 12px;border:1px solid #ddd;text-align:left"';
+
+  const sectionTitle = (emoji, title, color) =>
+    `<tr><td colspan="10" style="background:${color};padding:8px 12px;font-weight:700;font-size:14px;border:1px solid #ddd">${emoji} ${title}</td></tr>`;
+
+  let html = `<table style="border-collapse:collapse;font-family:sans-serif;font-size:12px;width:100%">
+  <tr><td colspan="10" style="background:#185FA5;color:#fff;padding:10px 14px;font-weight:700;font-size:15px;border:1px solid #185FA5">📊 배너/메일/스마트캠리 집계 &nbsp;&nbsp; ${weekLabel}</td></tr>
+
+  <!-- 요약 -->
+  <tr>
+    <td ${th}>배너 합계</td>
+    <td ${th}>메일 이미지</td>
+    <td ${th}>메일 HTML</td>
+    <td ${th}>메일 합계</td>
+    <td ${th}>스마트캠리</td>
+  </tr>
+  <tr>
+    <td style="padding:8px 12px;border:1px solid #ddd;text-align:center;font-size:18px;font-weight:700;color:#185FA5">${totalBanner}개</td>
+    <td style="padding:8px 12px;border:1px solid #ddd;text-align:center;font-size:18px;font-weight:700;color:#534AB7">${totalImg}개</td>
+    <td style="padding:8px 12px;border:1px solid #ddd;text-align:center;font-size:18px;font-weight:700;color:#0F6E56">${totalHtml}개</td>
+    <td style="padding:8px 12px;border:1px solid #ddd;text-align:center;font-size:18px;font-weight:700;color:#444">${totalImg+totalHtml}개</td>
+    <td style="padding:8px 12px;border:1px solid #ddd;text-align:center;font-size:18px;font-weight:700;color:#BA7517">${smartT.length}건</td>
+  </tr>
+
+  <tr><td colspan="10" style="padding:6px"></td></tr>
+
+  <!-- 배너 담당자별 -->
+  ${sectionTitle('🎨','배너 작업 · '+bannerT.length+'건 · '+totalBanner+'개','#E6F1FB')}
+  <tr><td ${th}>담당자</td><td ${th} colspan="9">배너 제작</td></tr>
+  ${Object.entries(bMap).sort((a,b)=>b[1]-a[1]).map(([n,c])=>
+    `<tr><td ${tdl}>${n}</td><td ${td} colspan="9"><b>${c}개</b></td></tr>`
+  ).join('')}
+  
+  <tr><td colspan="10" style="padding:4px"></td></tr>
+  <tr><td ${th}>날짜</td><td ${th} colspan="6">업무명</td><td ${th}>담당자</td><td ${th}>배너수</td><td ${th}>링크</td></tr>
+  ${bannerT.sort((a,b)=>(b.closedAt||b.updatedAt||'')>(a.closedAt||a.updatedAt||'')?-1:1).map(t=>
+    `<tr><td ${td}>${(t.closedAt||t.updatedAt||'').slice(5,10)}</td><td ${tdl} colspan="6">${t.title}</td><td ${td}>${t.assignees.map(a=>a.name).join(', ')}</td><td ${td}><b>${parseBannerCnt(t.title)||0}개</b></td><td ${td}><a href="${t.doorayUrl}" target="_blank">링크</a></td></tr>`
+  ).join('')}
+
+  <tr><td colspan="10" style="padding:6px"></td></tr>
+
+  <!-- 메일 담당자별 -->
+  ${sectionTitle('✉️','메일링 작업 · '+mailT.length+'건 · 이미지 '+totalImg+'개 / HTML '+totalHtml+'개','#EEEDFE')}
+  <tr><td ${th}>담당자</td><td ${th}>이미지</td><td ${th}>HTML</td><td ${th} colspan="7">합계</td></tr>
+  ${Object.entries(mMap).sort((a,b)=>(b[1].img+b[1].html)-(a[1].img+a[1].html)).map(([n,d])=>
+    `<tr><td ${tdl}>${n}</td><td ${td}>${d.img}개</td><td ${td}>${d.html}개</td><td ${td} colspan="7"><b>${d.img+d.html}개</b></td></tr>`
+  ).join('')}
+
+  <tr><td colspan="10" style="padding:4px"></td></tr>
+  <tr><td ${th}>날짜</td><td ${th} colspan="5">업무명</td><td ${th}>담당자</td><td ${th}>이미지</td><td ${th}>HTML</td><td ${th}>링크</td></tr>
+  ${mailT.sort((a,b)=>(b.closedAt||b.updatedAt||'')>(a.closedAt||a.updatedAt||'')?-1:1).map(t=>{
+    const cnt=parseMailCnt(t.title)||{img:0,html:0};
+    return `<tr><td ${td}>${(t.closedAt||t.updatedAt||'').slice(5,10)}</td><td ${tdl} colspan="5">${t.title}</td><td ${td}>${t.assignees.map(a=>a.name).join(', ')}</td><td ${td}>${cnt.img}개</td><td ${td}>${cnt.html}개</td><td ${td}><a href="${t.doorayUrl}" target="_blank">링크</a></td></tr>`;
+  }).join('')}
+
+  ${smartT.length ? `
+  <tr><td colspan="10" style="padding:6px"></td></tr>
+  ${sectionTitle('📸','스마트캠리 작업 · '+smartT.length+'건','#FFF3CD')}
+  <tr><td ${th}>날짜</td><td ${th} colspan="7">업무명</td><td ${th}>담당자</td><td ${th}>링크</td></tr>
+  ${smartT.sort((a,b)=>(b.closedAt||b.updatedAt||'')>(a.closedAt||a.updatedAt||'')?-1:1).map(t=>
+    `<tr><td ${td}>${(t.closedAt||t.updatedAt||'').slice(5,10)}</td><td ${tdl} colspan="7">${t.title}</td><td ${td}>${t.assignees.map(a=>a.name).join(', ')}</td><td ${td}><a href="${t.doorayUrl}" target="_blank">링크</a></td></tr>`
+  ).join('')}` : ''}
+
+</table>`;
+
+  // 클립보드에 HTML로 복사
+  const blob = new Blob([html], {type: 'text/html'});
+  const plainBlob = new Blob([html.replace(/<[^>]+>/g,'')], {type: 'text/plain'});
+  const item = new ClipboardItem({'text/html': blob, 'text/plain': plainBlob});
+  navigator.clipboard.write([item]).then(()=>{
+    alert('✅ 서식 있는 표가 복사됐어요!\n엑셀에서 Ctrl+V로 붙여넣기 하세요.');
+  }).catch(()=>{
+    // 대체: 임시 div로 복사
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    div.style.position = 'fixed';
+    div.style.opacity = '0';
+    document.body.appendChild(div);
+    const range = document.createRange();
+    range.selectNode(div);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    document.execCommand('copy');
+    window.getSelection().removeAllRanges();
+    document.body.removeChild(div);
+    alert('✅ 서식 있는 표가 복사됐어요!\n엑셀에서 Ctrl+V로 붙여넣기 하세요.');
+  });
+}
+
+
+// ── 공고제작 이미지 저장 ──────────────────────────────────────
+function saveGongoImage() {
+  const el = document.getElementById('main');
+  const btn = event.target;
+  btn.textContent = '저장 중...';
+  btn.disabled = true;
+  const { start, end } = getThursdayToWednesday(gongoWeekOffset);
+  const weekLabel = fmtDate(start)+'_'+fmtDate(end);
+  html2canvas(el, { backgroundColor: '#ffffff', scale: 2, useCORS: true }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = '공고제작_'+weekLabel.replace(/\//g,'-')+'.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    btn.textContent = '📸 이미지 저장';
+    btn.disabled = false;
+  }).catch(e => {
+    alert('이미지 저장 실패: '+e.message);
+    btn.textContent = '📸 이미지 저장';
+    btn.disabled = false;
+  });
+}
+
+// ── 공고제작 서식 있는 HTML 복사 ──────────────────────────────
+function copyGongoAsHtml() {
+  if (!lastWeeklyReportData) { alert('주간 보고 탭을 먼저 열어주세요'); return; }
+  const { weekTasks, personMap, start, end } = lastWeeklyReportData;
+  const weekLabel = fmtDate(start)+'(목) ~ '+fmtDate(end)+'(수)';
+
+  const sorted = Object.entries(personMap).sort((a,b)=>(b[1].공고+b[1].공고이미지+b[1].수정+b[1].외부+(b[1].RPO합불||0))-(a[1].공고+a[1].공고이미지+a[1].수정+a[1].외부+(a[1].RPO합불||0)));
+  const totalGongo   = sorted.reduce((s,[,d])=>s+d.공고,0);
+  const totalGoImg   = sorted.reduce((s,[,d])=>s+d.공고이미지,0);
+  const totalSujeong = sorted.reduce((s,[,d])=>s+d.수정,0);
+  const totalOuter   = sorted.reduce((s,[,d])=>s+d.외부,0);
+  const totalRpo     = sorted.reduce((s,[,d])=>s+(d.RPO합불||0),0);
+
+  const th = 'style="background:#E6F1FB;padding:6px 12px;border:1px solid #ddd;font-weight:600;text-align:center;color:#185FA5"';
+  const td = 'style="padding:6px 12px;border:1px solid #ddd;text-align:center"';
+  const tdl = 'style="padding:6px 12px;border:1px solid #ddd;text-align:left"';
+
+  // 목록 데이터
+  const allT = allTasks[GONGO_PROJECT_ID]||[];
+  const startStr = fmtDateFull(start), endStr = fmtDateFull(end);
+  const gongoT = allT.filter(t=>{const d=t.closedAt||(t.closed?t.createdAt?.slice(0,10):null);return d&&d>=startStr&&d<=endStr;});
+
+  let html = `<table style="border-collapse:collapse;font-family:sans-serif;font-size:12px;width:100%">
+  <tr><td colspan="8" style="background:#185FA5;color:#fff;padding:10px 14px;font-weight:700;font-size:15px;border:1px solid #185FA5">🗂 공고제작 집계 &nbsp;&nbsp; ${weekLabel}</td></tr>
+
+  <!-- 요약 -->
+  <tr>
+    <td ${th}>전체 업무</td>
+    <td ${th}>순수 공고</td>
+    <td ${th}>공고이미지</td>
+    <td ${th}>수정</td>
+    <td ${th}>외부</td>
+    ${totalRpo?`<td ${th}>RPO합불</td>`:''}
+  </tr>
+  <tr>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;font-size:18px;font-weight:700">${weekTasks.length}건</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;font-size:18px;font-weight:700;color:#185FA5">${totalGongo}개</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;font-size:18px;font-weight:700;color:#0F6E56">${totalGoImg}개</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;font-size:18px;font-weight:700;color:#BA7517">${totalSujeong}건</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;font-size:18px;font-weight:700;color:#888">${totalOuter}건</td>
+    ${totalRpo?`<td style="padding:8px;border:1px solid #ddd;text-align:center;font-size:18px;font-weight:700;color:#5B21B6">${totalRpo}건</td>`:''}
+  </tr>
+
+  <tr><td colspan="8" style="padding:6px"></td></tr>
+
+  <!-- 담당자별 -->
+  <tr><td colspan="8" style="background:#E6F1FB;padding:8px 12px;font-weight:700;border:1px solid #ddd">👤 담당자별 작업량</td></tr>
+  <tr>
+    <td ${th}>담당자</td><td ${th}>업무</td><td ${th}>공고</td><td ${th}>공고이미지</td>
+    <td ${th}>수정</td><td ${th}>외부</td><td ${th}>RPO합불</td><td ${th}>합계</td>
+  </tr>
+  ${sorted.map(([n,d])=>{
+    const total=d.공고+d.공고이미지+d.수정+d.외부+(d.RPO합불||0);
+    return `<tr>
+      <td ${tdl}><b>${n}</b></td>
+      <td ${td}>${d.tasks}건</td>
+      <td ${td}>${d.공고?d.공고+'개':'-'}</td>
+      <td ${td}>${d.공고이미지?d.공고이미지+'개':'-'}</td>
+      <td ${td}>${d.수정?d.수정+'건':'-'}</td>
+      <td ${td}>${d.외부?d.외부+'건':'-'}</td>
+      <td ${td}>${d.RPO합불?d.RPO합불+'건':'-'}</td>
+      <td style="padding:6px 12px;border:1px solid #ddd;text-align:center;font-weight:700">${total}개</td>
+    </tr>`;
+  }).join('')}
+
+  <tr><td colspan="8" style="padding:6px"></td></tr>
+
+  <!-- 업무 목록 -->
+  <tr><td colspan="8" style="background:#E6F1FB;padding:8px 12px;font-weight:700;border:1px solid #ddd">📋 업무 목록</td></tr>
+  <tr>
+    <td ${th}>날짜</td><td ${th} colspan="4">업무명</td>
+    <td ${th}>담당자</td><td ${th}>공고수</td><td ${th}>구분</td>
+  </tr>
+  ${gongoT.sort((a,b)=>(b.closedAt||b.createdAt||'')>(a.closedAt||a.createdAt||'')?-1:1).map(t=>{
+    const tp=t.classify?.수정?'수정':t.classify?.외부?'외부':t.tagIds?.includes(RPO_HAPBUL_TAG)?'RPO합불':'공고';
+    const tpColor=tp==='수정'?'#BA7517':tp==='외부'?'#888':tp==='RPO합불'?'#5B21B6':'#185FA5';
+    return `<tr>
+      <td ${td}>${(t.closedAt||t.createdAt||'').slice(5,10)}</td>
+      <td ${tdl} colspan="4"><a href="${t.doorayUrl}" style="color:#185FA5;text-decoration:none">${t.title}</a></td>
+      <td ${td}>${t.assignees.map(a=>a.name).join(', ')}</td>
+      <td ${td}>${t.itemCounts?.공고||0}개</td>
+      <td style="padding:6px 12px;border:1px solid #ddd;text-align:center;color:${tpColor};font-weight:600">${tp}</td>
+    </tr>`;
+  }).join('')}
+</table>`;
+
+  const blob = new Blob([html], {type:'text/html'});
+  const plainBlob = new Blob([html.replace(/<[^>]+>/g,'')], {type:'text/plain'});
+  const item = new ClipboardItem({'text/html':blob,'text/plain':plainBlob});
+  navigator.clipboard.write([item]).then(()=>{
+    alert('✅ 서식 있는 표가 복사됐어요!\n엑셀에서 Ctrl+V로 붙여넣기 하세요.');
+  }).catch(()=>{
+    const div=document.createElement('div');
+    div.innerHTML=html;
+    div.style.cssText='position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(div);
+    const range=document.createRange();
+    range.selectNode(div);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    document.execCommand('copy');
+    window.getSelection().removeAllRanges();
+    document.body.removeChild(div);
+    alert('✅ 서식 있는 표가 복사됐어요!\n엑셀에서 Ctrl+V로 붙여넣기 하세요.');
   });
 }
 
